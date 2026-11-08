@@ -1,0 +1,58 @@
+@use '../../styles/tokens' as *;
+
+:host { display: block; min-height: 100vh; }
+.cabecera {
+  background: linear-gradient(160deg, var(--c-fiordo-700), var(--c-fiordo) 60%, #1d5a5f);
+  color: #eef4f6;
+  padding: var(--s-5) 0 var(--s-7);
+}
+.propuesta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-sm);
+  img { background: #fff; border-radius: 8px; padding: 4px; height: 40px; width: auto; }
+}
+.intro {
+  margin-top: var(--s-7);
+  max-width: 860px;
+  .sobre { text-transform: uppercase; letter-spacing: 0.12em; font-size: var(--t-xs); font-weight: 700; color: var(--c-fiordo-200); }
+  h1 { color: #fff; font-size: var(--t-2xl); @media (min-width: $bp-tableta) { font-size: var(--t-4xl); } }
+  p { font-size: var(--t-lg); color: #eef4f6; strong { color: #fff; } }
+}
+main { padding-top: var(--s-6); outline: none; h2 { font-size: var(--t-xl); } }
+.perfiles {
+  list-style: none;
+  margin: 0 0 var(--s-6);
+  padding: 0;
+  display: grid;
+  gap: var(--s-4);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+}
+.perfil {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  gap: var(--s-4);
+  align-items: flex-start;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: border-color var(--transicion), box-shadow var(--transicion), transform var(--transicion);
+  &:hover { border-color: var(--c-fiordo); box-shadow: var(--sombra-2); transform: translateY(-2px); }
+  &:hover .flecha { transform: translateX(3px); }
+}
+.icono { display: inline-flex; padding: 12px; border-radius: var(--r-md); background: var(--c-fiordo-50); color: var(--c-fiordo); }
+.textos { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.nombre { font-family: var(--f-titulo); font-size: var(--t-xl); font-weight: 600; color: var(--c-fiordo); }
+.persona { font-weight: 600; }
+.hotel { display: inline-flex; align-items: center; gap: 4px; font-size: var(--t-sm); color: var(--c-texto-2); }
+.desc { margin-top: var(--s-2); font-size: var(--t-sm); color: var(--c-texto-2); }
+.flecha { color: var(--c-fiordo); align-self: center; transition: transform var(--transicion); }
+.notas {
+  .h-chica { font-size: var(--t-lg); }
+  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-3); }
+  li { display: flex; gap: var(--s-3); align-items: flex-start; font-size: var(--t-sm); app-icon { color: var(--c-fiordo); margin-top: 2px; } }
+}
+.pie { padding-block: var(--s-6); }

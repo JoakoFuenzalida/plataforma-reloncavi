@@ -1,0 +1,82 @@
+// =====================================================================
+// Sistema de diseño Reloncaví · Tokens
+// Paleta principal: 5 colores (RT-25.05). Contraste AA verificado sobre
+// blanco y sobre Niebla para todo texto (ver docs/sistema-de-diseno.md).
+// =====================================================================
+:root {
+  // --- Paleta principal (5) ---
+  --c-fiordo: #12384a;   // primario: navegación, acciones principales, títulos
+  --c-alerce: #2e6b53;   // secundario: estados positivos, sostenibilidad
+  --c-cobre: #a9461f;    // acento: destacados, alertas que requieren acción
+  --c-basalto: #1c262b;  // texto principal
+  --c-niebla: #f3f5f4;   // superficie de fondo
+
+  // --- Neutros derivados (tintes de la paleta, no colores nuevos) ---
+  --c-blanco: #ffffff;
+  --c-texto-2: #55636a;          // texto secundario (6,2:1 sobre blanco)
+  --c-borde: #d5dcdf;
+  --c-borde-fuerte: #9aa8ae;
+  --c-fiordo-50: #eaf1f4;
+  --c-fiordo-100: #d6e4ea;
+  --c-fiordo-200: #c9dce3;
+  --c-fiordo-700: #0b2735;
+  --c-alerce-50: #e8f2ed;
+  --c-cobre-50: #f8ece6;
+
+  // --- Funcionales de estado (derivados para mensajes) ---
+  --c-exito: var(--c-alerce);
+  --c-exito-fondo: var(--c-alerce-50);
+  --c-error: #b3261e;
+  --c-error-fondo: #fbeceb;
+  --c-advertencia: #7a4e00;
+  --c-advertencia-fondo: #fdf3dc;
+  --c-info: var(--c-fiordo);
+  --c-info-fondo: var(--c-fiordo-50);
+
+  // --- Tipografía (2 familias) ---
+  --f-titulo: 'Source Serif 4 Variable', Georgia, 'Times New Roman', serif;
+  --f-texto: 'Inter Variable', 'Segoe UI', Roboto, Arial, sans-serif;
+
+  --t-xs: 0.8125rem;  // 13px
+  --t-sm: 0.875rem;   // 14px
+  --t-md: 1rem;       // 16px
+  --t-lg: 1.125rem;   // 18px
+  --t-xl: 1.375rem;   // 22px
+  --t-2xl: 1.75rem;   // 28px
+  --t-3xl: 2.25rem;   // 36px
+  --t-4xl: 3rem;      // 48px
+
+  // --- Espaciado (retícula de 4 px) ---
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.5rem;
+  --s-6: 2rem;
+  --s-7: 3rem;
+  --s-8: 4rem;
+
+  // --- Forma y elevación ---
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-full: 999px;
+  --sombra-1: 0 1px 2px rgba(18, 56, 74, 0.08), 0 1px 3px rgba(18, 56, 74, 0.06);
+  --sombra-2: 0 4px 12px rgba(18, 56, 74, 0.1);
+  --sombra-3: 0 12px 32px rgba(18, 56, 74, 0.18);
+
+  // --- Interacción ---
+  --objetivo-min: 44px; // RT-25.03: objetivos táctiles de al menos 44x44
+  --foco: 0 0 0 3px var(--c-blanco), 0 0 0 5px var(--c-fiordo);
+  --transicion: 160ms cubic-bezier(0.2, 0, 0, 1);
+
+  --ancho-contenido: 1200px;
+  --alto-barra: 64px;
+  --ancho-menu: 264px;
+}
+
+// Puntos de quiebre coherentes con RT-25.04
+// teléfono ≤ 599 · tableta 600–1023 (768x1024 vertical) · escritorio pequeño 1024–1439 (1024 horizontal, 1366) · escritorio ≥ 1440 (1920)
+$bp-tableta: 600px;
+$bp-escritorio: 1024px;
+$bp-amplio: 1440px;
