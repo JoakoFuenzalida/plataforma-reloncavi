@@ -7,9 +7,12 @@ import { NoEncontrada } from './pages/no-encontrada';
 import { DatosReserva } from './pages/publico/datos';
 import { Pago } from './pages/publico/pago';
 import { Registro } from './pages/publico/registro';
+import { Operacion } from './pages/operacion';
 
 export const routes: Routes = [
   { path: '', component: Portada, title: 'Prototipo · Plataforma Hoteles Reloncaví' },
+  { path: 'personal/recepcion', component: Operacion, title: 'Recepción · Hoteles Reloncaví' },
+  { path: 'terreno', component: Operacion, data: { terreno: true }, title: 'Housekeeping · Hoteles Reloncaví' },
   {
     path: '',
     component: Publico,
