@@ -1,0 +1,68 @@
+:host {
+  display: block;
+}
+.cabecera {
+  padding: var(--s-4) 0;
+  background: var(--c-fiordo);
+  color: white;
+  a {
+    color: white;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+.cuerpo {
+  padding-block: var(--s-5);
+}
+.dos-columnas {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(0, 2fr);
+  gap: var(--s-5);
+  align-items: start;
+}
+.reserva {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  text-align: left;
+  cursor: pointer;
+  color: var(--c-basalto);
+  font: inherit;
+  min-height: 80px;
+}
+.reserva:hover,
+.activa {
+  border-color: var(--c-fiordo);
+  background: var(--c-fiordo-50);
+}
+.btn {
+  white-space: normal;
+  line-height: 1.3;
+  padding-block: 8px;
+}
+summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding-block: 12px;
+}
+fieldset {
+  border: 1px solid var(--c-borde);
+  border-radius: var(--r-md);
+  min-width: 0;
+}
+input,
+select {
+  max-width: 100%;
+}
+@media (max-width: 767px) {
+  .dos-columnas {
+    grid-template-columns: 1fr;
+  }
+  .cabecera .fila-entre {
+    align-items: flex-start;
+  }
+  .tarjeta {
+    padding: var(--s-4);
+  }
+}
