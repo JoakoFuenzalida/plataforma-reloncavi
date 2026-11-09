@@ -5,7 +5,7 @@ import { Icon } from '../shared/icon';
 import { Logo } from '../shared/logo';
 
 /** Perfiles cuyo recorrido ya está publicado en esta versión del prototipo. */
-const PUBLICADOS = new Set(['huesped', 'recepcion', 'housekeeping']);
+const PUBLICADOS = new Set(['huesped', 'recepcion', 'housekeeping', 'gerencia-hotel', 'comercial']);
 
 /**
  * Portada de acceso al prototipo: permite a la comisión evaluadora recorrer la solución

@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { DemoState } from '../../core/demo-state';
+import { OperacionState } from '../../core/operacion-state';
 import { HOTELES, Hotel, SIN_CUPO_DEMO, TipoHabitacion } from '../../core/hoteles';
 import { TPipe } from '../../core/i18n';
 import { Escena } from '../../shared/escena';
@@ -140,9 +141,9 @@ type Orden = 'relevancia' | 'precio' | 'norte';
                           <strong>{{ estado.precio(t.tarifaClp * q().noches) }}</strong>
                           <span class="texto-xs texto-2">{{ estado.precio(t.tarifaClp) }} {{ 'hoteles.por-noche' | t }}</span>
                         </div>
-                        <button type="button" class="btn btn-primario" [disabled]="t.capacidad < q().adultos"
+                        <button type="button" class="btn btn-primario" [disabled]="t.capacidad < q().adultos || cupos(h,t) === 0"
                           (click)="elegir(h, t)">
-                          {{ 'res.elegir' | t }}<span class="sr-only">: {{ t.nombre[estado.idioma()] }}, {{ h.nombreCorto }}</span>
+                          {{ cupos(h,t) === 0 ? (estado.idioma() === 'es' ? 'Sin disponibilidad' : 'Unavailable') : ('res.elegir' | t) }}<span class="sr-only">: {{ t.nombre[estado.idioma()] }}, {{ h.nombreCorto }}</span>
                         </button>
                       </li>
                     }
@@ -158,6 +159,7 @@ type Orden = 'relevancia' | 'precio' | 'norte';
 })
 export class Disponibilidad {
   protected readonly estado = inject(DemoState);
+  private readonly operacion = inject(OperacionState);
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -206,10 +208,10 @@ export class Disponibilidad {
   }
 
   protected quedan(h: Hotel, i: number): number | null {
-    // Inventario ficticio: algunos tipos muestran disponibilidad baja.
-    const semilla = (h.habitaciones + i * 7) % 5;
-    return h.tipo === 'lodge' || semilla === 0 ? 2 + (semilla % 3) : null;
+    return this.cupos(h, h.tipos[i]);
   }
+
+  protected cupos(h: Hotel, t: TipoHabitacion) { return this.operacion.cupos(h.id, t.codigo, this.q().llegada, this.q().salida); }
 
   protected fechaLarga(iso: string) {
     const d = new Date(iso + 'T12:00:00');
