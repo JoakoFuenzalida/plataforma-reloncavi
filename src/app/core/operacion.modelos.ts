@@ -75,6 +75,9 @@ export interface Reserva {
   // Importes base en CLP; la interfaz aplica la conversión visual.
   tarifaNocheClp: number;
   totalAlojamientoClp: number;
+  // Conserva el abono original cuando una extensión cambia el total.
+  alojamientoPagadoClp?: number;
+  salidaReal?: FechaISO;
 
   pagoReserva: 'pendiente' | 'aprobado' | 'rechazado';
   registrosPrevios: RegistroPrevio[];

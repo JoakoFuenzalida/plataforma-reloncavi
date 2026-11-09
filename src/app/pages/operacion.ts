@@ -5,10 +5,11 @@ import { DemoState } from "../core/demo-state";
 import { HOTELES, hotelPorId } from "../core/hoteles";
 import { OperacionState } from "../core/operacion-state";
 import { Reserva } from "../core/operacion.modelos";
+import { Estadia } from "./estadia";
 
 @Component({
   selector: "app-operacion",
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, Estadia],
   styleUrl: "./operacion.scss",
   template: ` <a class="saltar-contenido" href="#operacion"
       >Saltar al contenido</a
@@ -257,6 +258,10 @@ import { Reserva } from "../core/operacion.modelos";
               } @empty {
                 <p>No hay huéspedes alojados en la muestra.</p>
               }
+              <h2>Salidas realizadas</h2>
+              @for(r of finalizadas();track r.id){
+                <button class="tarjeta reserva" (click)="seleccionar(r)"><strong>{{nombre(r)}}</strong><span>{{r.codigo}} · Salida {{r.salidaReal}}</span></button>
+              } @empty { <p>No hay salidas realizadas.</p> }
             </section>
             <section class="tarjeta pila">
               @if (actual(); as r) {
@@ -364,47 +369,10 @@ import { Reserva } from "../core/operacion.modelos";
                     Confirmar check-in y entregar llave
                   </button>
                 } @else {
-                  <p class="mensaje mensaje-exito">
-                    Check-in completado · {{ llave() }} entregada en simulación.
-                  </p>
-                  <h3>Folio de cargos</h3>
-                  <ul>
-                    @for (c of op.cargosPorReserva(r.id); track c.id) {
-                      <li>
-                        {{ c.concepto }} · {{ demo.precio(c.montoClp) }} ·
-                        {{ c.sincronizacion }}
-                      </li>
-                    } @empty {
-                      <li>No hay cargos adicionales.</li>
-                    }
-                  </ul>
-                  <form class="pila" (ngSubmit)="cargo(r)">
-                    <label class="campo"
-                      >Concepto<input
-                        class="control"
-                        name="concepto"
-                        [(ngModel)]="concepto"
-                        required
-                        maxlength="100" /></label
-                    ><label class="campo"
-                      >Monto CLP<input
-                        class="control"
-                        name="monto"
-                        type="number"
-                        [(ngModel)]="monto"
-                        min="1"
-                        max="1000000"
-                        required /></label
-                    ><button class="btn btn-primario">Agregar cargo</button>
-                  </form>
-                  <p>
-                    Preautorización ficticia: CLP 200.000 para extras. Cobrado
-                    en simulación: {{ demo.precio(op.cobros()[r.id] ?? 0) }}. El
-                    alojamiento ya está pagado.
-                  </p>
-                  <button class="btn btn-secundario" (click)="cobrar(r)">
-                    Cobrar extras contra preautorización
-                  </button>
+                  @if(r.estado === 'alojado') {
+                    <p class="mensaje mensaje-exito">Check-in completado · {{ llave() }} entregada en simulación.</p>
+                  }
+                  @for(id of [r.id]; track id) { <app-estadia [reservaId]="id" /> }
                 }
               } @else {
                 <h2>Selecciona una reserva</h2>
@@ -447,8 +415,6 @@ export class Operacion {
   verificado = false;
   evidencia = false;
   habitacion = "";
-  concepto = "";
-  monto = 0;
   readonly habitaciones = computed(() =>
     this.op
       .habitacionesPorHotel(this.hotelId())
@@ -473,6 +439,7 @@ export class Operacion {
   readonly alojados = computed(() =>
     this.op.huespedesAlojados().filter((r) => r.hotelId === this.hotelId()),
   );
+  readonly finalizadas = computed(() => this.op.reservas().filter(r => r.hotelId === this.hotelId() && r.estado === "finalizada"));
   readonly actual = computed(() => this.op.reservaPorId(this.seleccion()));
   readonly cola = computed(() =>
     this.op.cola().filter((o) => o.hotelId === this.hotelId()),
@@ -536,22 +503,6 @@ export class Operacion {
       this.op.limpiar(id, true);
       this.inspeccion.set("");
     }
-  }
-  cargo(r: Reserva) {
-    this.mensaje.set(
-      this.op.agregarCargo(r.id, this.concepto, this.monto)
-        ? "Cargo registrado."
-        : "Revisa concepto, monto y conexión.",
-    );
-    this.concepto = "";
-    this.monto = 0;
-  }
-  cobrar(r: Reserva) {
-    this.mensaje.set(
-      this.op.cobrar(r.id)
-        ? "Cobro simulado registrado. Sin enlace, la aceptación central queda por verificar."
-        : "No hay saldo pendiente, supera la preautorización o se alcanzó el límite sin enlace.",
-    );
   }
   async reconectar() {
     this.sincronizando.set(true);

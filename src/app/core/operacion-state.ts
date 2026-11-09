@@ -138,6 +138,7 @@ export class OperacionState {
     this.avisos.set([]);
     this.esperas.set([]);
     this.cobros.set({});
+    this.pagosSalida.set([]);
   }
 
   readonly enlaces = signal<Record<string, number>>({});
@@ -367,6 +368,64 @@ export class OperacionState {
     return true;
   }
   readonly cobros = signal<Record<string, number>>({});
+  readonly pagosSalida = signal<{id: string; reservaId: string; montoClp: number; estado: 'aprobado' | 'rechazado'}[]>([]);
+
+  folio(id: string) {
+    const r = this.reservaPorId(id);
+    const alojamiento = r?.totalAlojamientoClp ?? 0;
+    const extras = this.cargosPorReserva(id).reduce((s,c) => s+c.montoClp,0);
+    const abono = r?.alojamientoPagadoClp ?? (r?.pagoReserva === 'aprobado' ? alojamiento : 0);
+    const extrasPagados = this.cobros()[id] ?? 0;
+    const pagosFinales = this.pagosSalida().filter(p => p.reservaId === id && p.estado === 'aprobado').reduce((s,p) => s+p.montoClp,0);
+    return {alojamiento, extras, abono, extrasPagados, pagosFinales, total: alojamiento+extras, pagado: abono+extrasPagados+pagosFinales, saldo: Math.max(0,alojamiento+extras-abono-extrasPagados-pagosFinales)};
+  }
+
+  evaluarExtension(id: string, salida: string): {error: string; noches: number; adicional: number} {
+    const r = this.reservaPorId(id);
+    const fallo = (error: string) => ({error, noches: 0, adicional: 0});
+    if (!r || r.estado !== 'alojado' || !r.habitacionId) return fallo('Solo puedes extender una reserva alojada con habitación asignada.');
+    if (!this.operable(r.hotelId)) return fallo('Reconecta antes de extender la estadía.');
+    const fecha = new Date(salida+'T00:00:00Z');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(salida) || Number.isNaN(fecha.getTime()) || fecha.toISOString().slice(0,10) !== salida || salida <= r.salida || salida <= this.fechaOperativa) return fallo('Elige una fecha válida posterior a la salida actual y al día de operación.');
+    const activas = this.reservas().filter(o => o.id !== id && o.hotelId === r.hotelId && o.estado !== 'cancelada' && o.estado !== 'finalizada');
+    if (activas.some(o => o.habitacionId === r.habitacionId && o.llegada < salida && o.salida > r.salida)) return fallo('La habitación está asignada a otra reserva durante la extensión.');
+    // Revisa cada noche de la partición, no la suma de reservas de todo el intervalo.
+    for (let dia = Date.parse(r.salida); dia < fecha.getTime(); dia += 86400000) {
+      const noche = new Date(dia).toISOString().slice(0,10);
+      if (activas.filter(o => o.tipoHabitacionCodigo === r.tipoHabitacionCodigo && o.llegada <= noche && o.salida > noche).length >= 3) return fallo('No hay cupos de esta categoría para todas las noches adicionales.');
+    }
+    const noches = (fecha.getTime()-Date.parse(r.salida))/86400000;
+    return {error:'', noches, adicional:noches*r.tarifaNocheClp};
+  }
+
+  extenderEstadia(id: string, salida: string) {
+    const resultado = this.evaluarExtension(id,salida);
+    if (resultado.error) return resultado.error;
+    const r = this.reservaPorId(id)!;
+    const abono = this.folio(id).abono;
+    this.datos.update(d => ({...d, reservas:d.reservas.map(v => v.id===id ? {...v, salida, alojamientoPagadoClp:abono, totalAlojamientoClp:v.totalAlojamientoClp+resultado.adicional} : v)}));
+    this.registrar(r,`Extensión ${r.codigo} hasta ${salida}: CLP ${resultado.adicional}`);
+    return '';
+  }
+
+  checkout(id: string, aprobado: boolean) {
+    const r = this.reservaPorId(id);
+    if (!r || r.estado !== 'alojado' || !r.habitacionId) return 'La reserva ya está cerrada o no está alojada.';
+    if (!this.operable(r.hotelId)) return 'Límite sin enlace alcanzado. Reconecta antes de finalizar la salida.';
+    if (this.habitacionPorId(r.habitacionId)?.estado !== 'ocupada') return 'Revisa la habitación asignada antes de finalizar.';
+    const f = this.folio(id);
+    // Sin enlace, todos los cobros adicionales comparten una sola preautorización.
+    if (this.sinEnlace(r.hotelId) && f.extrasPagados+f.pagosFinales+f.saldo > 200000) return 'El saldo supera la preautorización disponible. Reconecta para simular el pago en línea.';
+    if (f.saldo > 0) {
+      this.pagosSalida.update(p => [...p,{id:crypto.randomUUID(),reservaId:id,montoClp:f.saldo,estado:aprobado?'aprobado':'rechazado'}]);
+      if (!aprobado) return 'Pago rechazado. No se cobró el saldo ni se cerró la reserva. Puedes reintentar.';
+      this.registrar(r,`Pago de salida ${r.codigo}: CLP ${f.saldo}`,'Riesgo de rechazo diferido: autorización central no consultada');
+    }
+    this.datos.update(d => ({...d, reservas:d.reservas.map(v=>v.id===id?{...v,estado:'finalizada',salidaReal:this.fechaOperativa}:v),habitaciones:d.habitaciones.map(h=>h.id===r.habitacionId?{...h,estado:'pendiente-limpieza',prioridadLimpieza:'normal',motivoPrioridad:null,responsableLimpiezaId:null}:h)}));
+    this.esperas.update(v => v.filter(reservaId => reservaId !== id));
+    this.registrar(r,`Check-out ${r.codigo}: habitación enviada a limpieza`);
+    return '';
+  }
   cobrar(id: string) {
     const r = this.reservaPorId(id);
     if (!r || r.estado !== "alojado" || !this.operable(r.hotelId)) return false;
@@ -445,6 +504,7 @@ export class OperacionState {
         r.hotelId === hotelId &&
         r.tipoHabitacionCodigo === tipo &&
         r.estado !== "cancelada" &&
+        r.estado !== "finalizada" &&
         r.llegada < salida &&
         r.salida > llegada,
     ).length;
