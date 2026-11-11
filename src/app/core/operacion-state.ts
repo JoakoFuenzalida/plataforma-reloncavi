@@ -20,7 +20,21 @@ import {
   RESERVAS_INICIALES,
 } from "./operacion.datos";
 
+interface SolicitudFusion {
+  id: string;
+  origen: Huesped;
+  destino: Huesped;
+  motivo: string;
+  estado: 'pendiente' | 'aprobada' | 'rechazada';
+  solicitadaPor: string;
+  revisadaPor: string;
+  observacion: string;
+  fecha: string;
+  revision: string;
+}
+
 interface DatosOperacion {
+  fusiones: SolicitudFusion[];
   huespedes: Huesped[];
   habitaciones: Habitacion[];
   reservas: Reserva[];
@@ -31,6 +45,7 @@ interface DatosOperacion {
 function crearDatosIniciales(): DatosOperacion {
   // Cada reinicio obtiene una copia independiente de los datos.
   return {
+    fusiones: [],
     huespedes: structuredClone(HUESPEDES_INICIALES),
     habitaciones: [
       ...structuredClone(HABITACIONES_INICIALES),
@@ -90,6 +105,69 @@ export class OperacionState {
   private readonly datos = signal<DatosOperacion>(crearDatosIniciales());
 
   readonly huespedes = computed(() => this.datos().huespedes);
+  readonly fusiones = computed(() => this.datos().fusiones);
+  readonly operadorDirectorio = signal<'recepcion' | 'supervisor'>('recepcion');
+
+  private revisionFusion(origen: string, destino: string): string {
+    return JSON.stringify([this.huespedPorId(origen), this.huespedPorId(destino),
+      this.reservas().filter(r => [r.reservanteId, r.pagadorId, ...r.huespedesIds].some(id => id === origen || id === destino))]);
+  }
+
+  conflictoFusion(origen: string, destino: string): string {
+    const a = this.huespedPorId(origen), b = this.huespedPorId(destino);
+    if (!a || !b || origen === destino) return 'Selecciona dos fichas diferentes y vigentes.';
+    if (this.reservas().some(r => r.huespedesIds.includes(origen) && r.huespedesIds.includes(destino)))
+      return 'Ambas fichas se alojan en una misma reserva. Revisa esa reserva antes de fusionar.';
+    const documentos = this.reservas().flatMap(r => r.registrosPrevios)
+      .filter(p => p.huespedId === origen || p.huespedId === destino);
+    for (const tipo of ['cedula', 'pasaporte']) {
+      const numeros = new Set(documentos.filter(p => p.tipoDocumento === tipo && p.numeroDocumento.trim())
+        .map(p => p.numeroDocumento.replace(/[\s.-]/g, '').toUpperCase()));
+      if (numeros.size > 1) return 'Hay documentos incompatibles. Revisa la identidad antes de fusionar.';
+    }
+    if ([...new Set([...a.preferencias, ...b.preferencias])].join(', ').length > 300)
+      return 'Revisa las preferencias: la ficha combinada supera los 300 caracteres.';
+    return '';
+  }
+
+  solicitarFusion(origen: string, destino: string, motivo: string): string {
+    if (this.operadorDirectorio() !== 'recepcion') return 'La solicitud corresponde al perfil de recepción.';
+    const conflicto = this.conflictoFusion(origen, destino);
+    if (conflicto) return conflicto;
+    if (motivo.trim().length < 10 || motivo.trim().length > 500) return 'Describe la verificación de identidad en 10 a 500 caracteres.';
+    if (this.fusiones().some(f => f.estado === 'pendiente' && [f.origen.id, f.destino.id].some(id => id === origen || id === destino)))
+      return 'Una de las fichas ya tiene una solicitud pendiente.';
+    const solicitud: SolicitudFusion = {id: crypto.randomUUID(), origen: structuredClone(this.huespedPorId(origen)!),
+      destino: structuredClone(this.huespedPorId(destino)!), motivo: motivo.trim(), estado: 'pendiente',
+      solicitadaPor: 'Recepción', revisadaPor: '', observacion: '', fecha: this.fechaOperativa,
+      revision: this.revisionFusion(origen, destino)};
+    this.datos.update(d => ({...d, fusiones: [...d.fusiones, solicitud]}));
+    return '';
+  }
+
+  revisarFusion(id: string, aprobar: boolean, identidad: boolean, observacion: string): string {
+    const f = this.fusiones().find(f => f.id === id);
+    if (this.operadorDirectorio() !== 'supervisor' || !f || f.estado !== 'pendiente')
+      return 'Se requiere supervisión y una solicitud pendiente.';
+    if (observacion.trim().length < 10 || observacion.trim().length > 500) return 'Registra el fundamento de la decisión en 10 a 500 caracteres.';
+    if (aprobar) {
+      if (!identidad) return 'Confirma que verificaste la identidad y los datos que se conservarán.';
+      const conflicto = this.conflictoFusion(f.origen.id, f.destino.id);
+      if (conflicto) return conflicto;
+      if (f.revision !== this.revisionFusion(f.origen.id, f.destino.id))
+        return 'Las fichas o reservas cambiaron. Rechaza esta solicitud y solicita una nueva revisión.';
+    }
+    // Actualización atómica: roles, registros y perfiles conservan la misma identidad.
+    const reemplazar = (id: string) => id === f.origen.id ? f.destino.id : id;
+    this.datos.update(d => ({...d,
+      fusiones: d.fusiones.map(s => s.id === id ? {...s, estado: aprobar ? 'aprobada' : 'rechazada', revisadaPor: 'Supervisión', observacion: observacion.trim()} : s),
+      huespedes: aprobar ? d.huespedes.filter(h => h.id !== f.origen.id).map(h => h.id === f.destino.id ?
+        {...h, preferencias: [...new Set([...h.preferencias, ...f.origen.preferencias])]} : h) : d.huespedes,
+      reservas: aprobar ? d.reservas.map(r => ({...r, reservanteId: reemplazar(r.reservanteId), pagadorId: reemplazar(r.pagadorId),
+        huespedesIds: r.huespedesIds.map(reemplazar), registrosPrevios: r.registrosPrevios.map(p => ({...p, huespedId: reemplazar(p.huespedId)}))})) : d.reservas,
+    }));
+    return '';
+  }
   readonly habitaciones = computed(() => this.datos().habitaciones);
   readonly reservas = computed(() => this.datos().reservas);
   readonly cargos = computed(() => this.datos().cargos);
@@ -221,6 +299,7 @@ export class OperacionState {
     this.cobros.set({});
     this.pagosSalida.set([]);
     this.operadorMantenimiento.set('tecnico');
+    this.operadorDirectorio.set('recepcion');
   }
 
   readonly enlaces = signal<Record<string, number>>({});

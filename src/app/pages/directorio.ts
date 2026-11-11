@@ -149,6 +149,26 @@ import { hotelPorId } from "../core/hoteles";
               </ul>
             }
             <h3>Historial en la cadena</h3>
+            <details>
+              <summary>Solicitar fusión de esta ficha</summary>
+              <div class="pila">
+                <p>Esta ficha se retirará del directorio. Se conservarán los datos de contacto, nacionalidad e idioma de la ficha elegida; las preferencias se combinarán y las reservas y registros previos se vincularán a ella. La solicitud requiere revisión de supervisión.</p>
+                <label class="campo" for="fusion-destino">Ficha que se conservará
+                  <select id="fusion-destino" class="control" [ngModel]="destinoId()" (ngModelChange)="destinoId.set($event)">
+                    <option value="">Seleccionar ficha</option>
+                    @for (otra of op.huespedes(); track otra.id) {
+                      @if (otra.id !== h.id) { <option [value]="otra.id">{{ otra.nombres }} {{ otra.apellidos }} · {{ otra.correo }}</option> }
+                    }
+                  </select>
+                </label>
+                @if (op.huespedPorId(destinoId()); as destino) {
+                  <p>Se conservará: {{ destino.nombres }} {{ destino.apellidos }} · {{ destino.correo }} · {{ destino.telefono }} · {{ destino.nacionalidad || 'Sin nacionalidad' }} · {{ destino.idioma }}.</p>
+                  <p>Preferencias actuales: {{ destino.preferencias.join(', ') || 'Sin preferencias' }}.</p>
+                }
+                <label class="campo">Verificación de identidad<textarea class="control" [(ngModel)]="motivoFusion" maxlength="500"></textarea></label>
+                <button class="btn btn-secundario" [disabled]="op.operadorDirectorio() !== 'recepcion'" (click)="solicitar()">Enviar a supervisión</button>
+              </div>
+            </details>
             <ol class="historial">
               @for (r of historial(); track r.id) {
                 <li>
@@ -190,6 +210,31 @@ import { hotelPorId } from "../core/hoteles";
           }
         </section>
       </div>
+      <section class="tarjeta pila" aria-labelledby="fusiones-titulo">
+        <h2 id="fusiones-titulo">Fusión supervisada</h2>
+        <label class="campo">Perfil de demostración del directorio
+          <select class="control" [ngModel]="op.operadorDirectorio()" (ngModelChange)="op.operadorDirectorio.set($event)">
+            <option value="recepcion">Recepción</option><option value="supervisor">Supervisión</option>
+          </select>
+        </label>
+        <p>Simulación de separación de funciones. Las decisiones quedan en el historial durante esta sesión.</p>
+        @for (f of op.fusiones(); track f.id) {
+          <article class="tarjeta pila" style="overflow-wrap:anywhere">
+            <h3>{{ f.origen.nombres }} {{ f.origen.apellidos }} → {{ f.destino.nombres }} {{ f.destino.apellidos }}</h3>
+            <p>Estado: {{ f.estado }} · {{ f.fecha }} · Solicitada por {{ f.solicitadaPor }}</p>
+            <p>Verificación: {{ f.motivo }}</p>
+            <p>Ficha de origen: {{ f.origen.correo }} · {{ f.origen.telefono }} · {{ f.origen.nacionalidad }} · {{ f.origen.idioma }}. Preferencias: {{ f.origen.preferencias.join(', ') || 'Sin preferencias' }}.</p>
+            <p>Datos que se conservarán: {{ f.destino.correo }} · {{ f.destino.telefono }} · {{ f.destino.nacionalidad }} · {{ f.destino.idioma }}. Preferencias: {{ f.destino.preferencias.join(', ') || 'Sin preferencias' }}.</p>
+            @if (f.estado === 'pendiente' && op.operadorDirectorio() === 'supervisor') {
+              <label class="fila"><input type="checkbox" [(ngModel)]="revisiones[f.id].identidad" />Verifiqué la identidad y los datos que se conservarán</label>
+              <label class="campo">Fundamento de la decisión<textarea class="control" [(ngModel)]="revisiones[f.id].observacion" maxlength="500"></textarea></label>
+              <div class="fila"><button class="btn btn-primario" (click)="revisar(f.id, true)">Aprobar fusión</button><button class="btn btn-secundario" (click)="revisar(f.id, false)">Rechazar solicitud</button></div>
+            }
+            @if (f.revisadaPor) { <p>{{ f.revisadaPor }}: {{ f.observacion }}</p> }
+          </article>
+        } @empty { <p>No hay solicitudes de fusión.</p> }
+        @if (mensajeFusion()) { <p class="mensaje" [class.mensaje-error]="errorFusion()" [class.mensaje-exito]="!errorFusion()" [attr.role]="errorFusion() ? 'alert' : 'status'">{{ mensajeFusion() }}</p> }
+      </section>
       <footer class="texto-sm texto-2">
         Plataforma operada por VORA · Fichas ficticias compartidas en memoria.
       </footer>
@@ -206,6 +251,30 @@ export class Directorio {
   readonly editando = signal(false);
   readonly mensaje = signal("");
   readonly error = signal(false);
+  readonly destinoId = signal('');
+  readonly mensajeFusion = signal('');
+  readonly errorFusion = signal(false);
+  motivoFusion = '';
+  revisiones: Record<string, {identidad: boolean; observacion: string}> = {};
+  constructor() {
+    for (const f of this.op.fusiones()) this.revisiones[f.id] = {identidad: false, observacion: ''};
+  }
+  solicitar() {
+    const error = this.op.solicitarFusion(this.seleccion(), this.destinoId(), this.motivoFusion);
+    for (const f of this.op.fusiones()) this.revisiones[f.id] ??= {identidad: false, observacion: ''};
+    this.errorFusion.set(!!error);
+    this.mensajeFusion.set(error || 'Solicitud enviada. Cambia a Supervisión para revisar.');
+  }
+  revisar(id: string, aprobar: boolean) {
+    const revision = this.revisiones[id];
+    const error = this.op.revisarFusion(id, aprobar, revision.identidad, revision.observacion);
+    this.errorFusion.set(!!error);
+    this.mensajeFusion.set(error || (aprobar ? 'Fusión aprobada. Reservas y registros vinculados a la ficha conservada.' : 'Solicitud rechazada. Las fichas se mantienen separadas.'));
+    if (!error && aprobar) {
+      this.seleccion.set(this.op.fusiones().find(f => f.id === id)!.destino.id);
+      this.destinoId.set(''); this.motivoFusion = ''; this.busqueda.set('');
+    }
+  }
   readonly actual = computed(() => this.op.huespedPorId(this.seleccion()));
   readonly personas = computed(() =>
     this.op
@@ -260,6 +329,7 @@ export class Directorio {
     };
   }
   abrir(h: Huesped) {
+    this.destinoId.set(''); this.motivoFusion = '';
     this.seleccion.set(h.id);
     this.editando.set(false);
     this.mensaje.set("");

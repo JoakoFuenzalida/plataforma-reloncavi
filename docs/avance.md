@@ -1,42 +1,51 @@
 # Avance del prototipo VORA
 
-Actualizado: 9 de noviembre de 2026. Rama: `feat/reservas-recepcion`.
-Requisitos: `Prototipo_VORA_requisitos_y_plan_v2.md`. Fecha simulada: 18 de enero de 2029.
+Actualizado: 10 de noviembre de 2026. Rama: `main`.
+Fecha simulada: 18 de enero de 2029. Datos ficticios en memoria; se reinician al recargar.
 
-## Terminado
+## Implementado
 
-- Base existente preservada: diseño, nueve hoteles, ES/EN, cuatro monedas, búsqueda y datos del reservante.
-- Reserva: pago ficticio aprobado/rechazado, reintento, confirmación única, notificación simulada bilingüe y cupo finito por categoría/fechas.
-- Registro previo del titular: documento, carga/arrastre de archivo y cámara simulada, idioma, preferencias, firma, consentimiento y evidencia de exención. Los archivos solo conservan su nombre en memoria. La exención requiere revisión de recepción; no se aplica automáticamente.
-- Recepción: llegadas, búsqueda, registro previo compartido, verificación documental, habitación lista del mismo tipo o superior, llave según hotel y check-in. Reservante, pagador y huésped se mantienen separados en el modelo; la reserva directa usa una misma persona.
-- Excepción: habitación no lista, alternativa, prioridad para housekeeping y espera con aviso simulado cuando queda lista.
-- Housekeeping: prioridad compartida, limpieza → inspección → disponible; lista de chequeo y confirmación del supervisor; cambio de operador en dispositivo compartido.
-- Sin enlace: estado por hotel, horas simuladas (96 lodge/24 urbano), bloqueo al alcanzar el límite, check-in, llave mecánica, cargos y cobro ficticio contra preautorización de extras de CLP 200.000. Cola con riesgo de rechazo diferido y reconexión idempotente. No es una implementación de resiliencia real.
-- Tablero inicial: ocupación, ADR y RevPAR con definición; barras, anillo y línea; filtros hotel/categoría y detalle de registros. Los KPI usan la muestra operativa, claramente distinguida del inventario de 820 habitaciones. La línea histórica es una serie ficticia independiente.
+- Portal público: nueve hoteles, español/inglés, cuatro monedas, búsqueda y disponibilidad simulada.
+- Reservas: validaciones, pago ficticio aprobado/rechazado, reintento y confirmación sin duplicados.
+- Participantes: perfiles reutilizables; reservante, pagador y huéspedes distintos; registro previo individual de acompañantes.
+- Registro previo: documento, archivo/cámara simulada, preferencias, idioma, firma, consentimiento y evidencia de exención para revisión de recepción.
+- Recepción: llegadas, verificación documental, asignación de habitación, llave y check-in; alternativa o prioridad de limpieza si la habitación no está lista.
+- Housekeeping: limpieza, inspección, liberación supervisada y aviso simulado a recepción.
+- Estadía: cargos, extensión, saldo, cobro simulado y check-out con habitación pendiente de limpieza.
+- Mantenimiento: incidencia con foto, bloqueo, orden de trabajo y aprobación o devolución por supervisión.
+- Operación sin enlace simulada por hotel: límite de 96 h en lodge/24 h en urbano, preautorización, cola y reconexión sin duplicados.
+- Directorio: creación/edición, preferencias e historial de reservas de toda la cadena; detección de correo coincidente sin fusión automática.
+- Fusión supervisada: comparación y elección de ficha conservada, solicitud por recepción, aprobación/rechazo por supervisión e historial de decisiones. Conserva los roles y registros previos, combina preferencias y bloquea documentos incompatibles, huéspedes conjuntos o datos modificados después de solicitar. Los perfiles son de demostración, sin autorización real de servidor.
+- Tablero inicial: ocupación, ADR y RevPAR; tres tipos de gráfico, filtros por hotel/categoría y detalle. Distingue muestra operativa e histórico ficticio.
+- Cambios publicados en el repositorio GitHub en `main`. Esto no acredita una URL pública desplegada y verificada.
 
-## Verificaciones
+## Pendiente de implementación
 
-- Compilación de producción inicial y de cada bloque implementado.
-- `tests/reserva.cjs`: validaciones, rechazo/reintento aprobado, confirmación, registro a 375×812.
-- `tests/operacion.cjs`: prioridad, espera, limpieza, inspección, aviso, check-in urbano/lodge, cargos, cobro, límite de 96 h y reconexión sin duplicados.
-- `tests/presentacion.cjs`: rutas a 1920×1080, 1366×768, 768×1024, 1024×768 y 375×812; filtros y estado vacío; registro inglés y evidencia compartida.
-- Ejecutar con `npm start -- --host 127.0.0.1 --port 4202`, luego `node tests/reserva.cjs`, `node tests/operacion.cjs` y `node tests/presentacion.cjs`. Requieren Edge instalado y `playwright-core` ya incluido en el proyecto. No se contactan servicios de pago ni se envían mensajes.
+- Autenticación simulada, recuperación, segundo factor y onboarding de temporada.
+- Directorio de agencias/turoperadores y empresas: contratos, cupos, comisiones y convenios; evaluaciones/NPS e incidencias en ficha.
+- Administración: usuarios, permisos por hotel, alta masiva, reglas con aprobación dual y auditoría/exportación.
+- Tablero completo: seis tipos de gráfico, filtros temporales, exportación y métricas adicionales.
+- Sostenibilidad y Folio Verde provisional/definitivo, metodología y expediente.
+- Eventos/salones: disponibilidad, prevención de doble compromiso, cotización y contrato simulado.
+- Revisión central de cobros rechazados o conflictivos en la simulación sin enlace.
+- Personalización del tablero y cierre de los recorridos de navegación previstos.
 
-## Pendiente para entrega
+## Verificación y entrega
 
-- Auditoría completa WCAG 2.2 AA, contraste, navegación manual por teclado y capturas formales. Las pruebas de tamaño no equivalen a certificación de accesibilidad.
-- URL institucional definitiva, responsable y garantía de seis meses; publicación y prueba desde otro dispositivo. No se ha hecho push ni publicado.
-- Arquitectura de información, matriz RF/RT y sistema de diseño/informe de accesibilidad completos.
-- Alcance final del 25 de noviembre: autenticación simulada, onboarding de temporada, mantenimiento con aprobación, directorio y fusión supervisada, administración y auditoría, eventos, sostenibilidad/Folio Verde, extensión de estadía y check-out, seis gráficos con exportación y filtros temporales.
-- Registro individual de todos los acompañantes y roles distintos en la interfaz de reserva. En este avance el registro móvil es del titular; recepción verifica al grupo.
-- La aprobación central de cobros rechazados/conflictivos y el detalle de sincronización productiva no están implementados; la cola actual representa el escenario exitoso e identifica el riesgo.
-- Decidir RT-25.10 y actualizar las referencias del T-12 en la propuesta documental, fuera de este repositorio.
+- Compilación de producción: `npm run build`.
+- Iniciar servidor: `npm start -- --host 127.0.0.1 --port 4202`.
+- Pruebas de navegador: `node --test tests/*.cjs` (Edge instalado y playwright-core incluido).
+- Pruebas disponibles: reserva, operación, estadía, mantenimiento, directorio, fusión y presentación.
+- La prueba de fusión cubre aprobación, rechazo, separación de funciones, migración de referencias/documentos, cambios posteriores, conflictos y cinco tamaños de pantalla.
+- Falta auditoría completa de accesibilidad, recorrido manual por teclado, contraste y capturas finales. Las pruebas de tamaño no certifican WCAG.
+- Falta verificar despliegue público, URL definitiva y acceso desde otro dispositivo; cerrar documentación técnica de navegación y diseño del prototipo.
 
-## Guion de demostración (aproximadamente tres minutos)
+## Probar la fusión
 
-1. Portada → Huésped: reserva con pago simulado, confirmación y registro previo. No recargar el navegador: los datos son en memoria.
-2. Cambiar perfil → Recepción: Emily Carter tiene la habitación 201 sin preparar; pedir prioridad y registrar espera.
-3. Housekeeping: iniciar/finalizar limpieza de 201, cambiar a supervisor, inspeccionar y confirmar liberación.
-4. Recepción: aviso de habitación lista, verificar documento ficticio y entregar llave.
-5. Seleccionar Lodge Aysén, perder enlace y registrar check-in de James Wilson; agregar un cargo, cobrar contra preautorización y reconectar.
-6. Tablero: mostrar ocupación/ADR/RevPAR y sus definiciones. Diferenciar la muestra operativa de la serie histórica ficticia.
+1. Recepción → Directorio de huéspedes → Nueva ficha: crear una persona ficticia duplicada.
+2. Abrir su ficha → Solicitar fusión de esta ficha; elegir la ficha que se conservará y describir la verificación.
+3. En Fusión supervisada, cambiar el perfil de demostración a Supervisión.
+4. Revisar ambas fichas, confirmar identidad y escribir el fundamento; aprobar o rechazar.
+5. Comprobar la ficha conservada, su historial y el registro de la decisión.
+
+La fusión combina preferencias y mantiene el contacto, nacionalidad e idioma de la ficha elegida. No presupone que dos personas con el mismo correo sean la misma persona.

@@ -1,0 +1,73 @@
+const {chromium}=require('playwright-core');
+const assert=require('node:assert/strict');
+(async()=>{
+ const browser=await chromium.launch({executablePath:process.env.EDGE_PATH||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});
+ try {
+ const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:4202/personal/huespedes');
+ await page.getByRole('button',{name:'Nueva ficha'}).click();
+ for(const [label,value] of [['Nombres','Emily duplicada'],['Apellidos','Carter'],['Correo electrónico','emily.carter@example.com'],['Teléfono','+447700900123']]) await page.getByLabel(label,{exact:true}).fill(value);
+ await page.getByLabel('Preferencias',{exact:true}).fill('Piso alto');
+ await page.getByRole('button',{name:'Guardar ficha'}).click();
+ await page.getByText('Solicitar fusión de esta ficha',{exact:true}).click();
+ await page.locator('#fusion-destino').selectOption('huesped-emily');
+ await page.getByRole('button',{name:'Enviar a supervisión'}).click();
+ await page.getByRole('alert').filter({hasText:'10 a 500'}).waitFor();
+ await page.getByLabel('Verificación de identidad',{exact:true}).fill('Identidad ficticia cotejada con la ficha original.');
+ await page.getByRole('button',{name:'Enviar a supervisión'}).click();
+ await page.getByRole('status').filter({hasText:'Solicitud enviada'}).waitFor();
+ assert.equal(await page.getByRole('button',{name:'Aprobar fusión'}).count(),0);
+ await page.getByLabel('Perfil de demostración del directorio').selectOption('supervisor');
+ await page.getByLabel('Fundamento de la decisión').fill('Identidad verificada por supervisión en la demostración.');
+ await page.getByRole('button',{name:'Aprobar fusión'}).click();
+ await page.getByRole('alert').filter({hasText:'Confirma que'}).waitFor();
+ await page.getByLabel('Verifiqué la identidad y los datos que se conservarán').check();
+ await page.getByRole('button',{name:'Aprobar fusión'}).click();
+ await page.getByRole('status').filter({hasText:'Fusión aprobada'}).waitFor();
+ assert.equal(await page.getByRole('button',{name:/Emily duplicada/}).count(),0);
+ await page.getByRole('heading',{name:'Emily Carter',exact:true}).waitFor();
+ await page.getByText('Preferencias: Habitación tranquila, Piso alto',{exact:true}).waitFor();
+ for(const [width,height] of [[1920,1080],[1366,768],[768,1024],[1024,768],[375,812]]) {await page.setViewportSize({width,height});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);}
+ console.log(await page.evaluate(()=>{
+ const op=ng.getComponent(document.querySelector('app-directorio')).op;
+ const check=(v,m)=>{if(!v)throw Error(m)};
+ op.reiniciarDemostracion();
+ const original=op.huespedPorId('huesped-emily');
+ const crear=()=>op.guardarHuesped({...original,id:undefined,nombres:'Emily copia',preferencias:['Piso alto']}).id;
+ const destino=crear();
+ const reserva=op.reservasDePersona(original.id)[0];
+ const registro={huespedId:original.id,tipoDocumento:'pasaporte',numeroDocumento:'AB123',archivoDocumentoNombre:'demo.png',firmaAceptada:true,consentimientoDatos:true,solicitaExencionIva:false,evidenciaExencionNombre:null,estado:'enviado'};
+ op.guardarRegistro(reserva.id,registro,'en','');
+ check(!op.solicitarFusion(original.id,destino,'Documento ficticio cotejado.'),'solicitud válida');
+ const f=op.fusiones().at(-1);
+ check(!!op.revisarFusion(f.id,true,true,'Supervisión confirma identidad.'),'recepción no aprueba');
+ check(!!op.solicitarFusion(original.id,destino,'Documento ficticio cotejado.'),'solicitud duplicada bloqueada');
+ op.operadorDirectorio.set('supervisor');
+ check(!op.revisarFusion(f.id,true,true,'Supervisión confirma identidad.'),'aprobación');
+ const r=op.reservaPorId(reserva.id);
+ check(r.reservanteId===destino&&r.pagadorId===destino&&r.huespedesIds.includes(destino),'roles migrados');
+ check(r.registrosPrevios[0].huespedId===destino&&r.registrosPrevios[0].numeroDocumento==='AB123','documento conservado');
+ check(!op.huespedPorId(original.id),'origen retirado');
+ check(!!op.revisarFusion(f.id,true,true,'Supervisión confirma identidad.'),'no repetir aprobación');
+ op.operadorDirectorio.set('recepcion');const copia=crear();
+ check(!op.solicitarFusion(copia,destino,'Documento ficticio cotejado.'),'segunda solicitud');
+ const g=op.fusiones().at(-1);op.guardarHuesped({...op.huespedPorId(destino),telefono:'+56911112222'});
+ op.operadorDirectorio.set('supervisor');
+ check(op.revisarFusion(g.id,true,true,'Supervisión confirma identidad.').includes('cambiaron'),'detecta cambio posterior');
+ check(!op.revisarFusion(g.id,false,false,'Rechazada por cambio posterior.'),'rechazo válido');
+ check(!!op.huespedPorId(copia),'rechazo conserva origen');
+ op.borrador.set({hotelId:'puerto-varas',tipo:'STD',llegada:'2029-03-01',salida:'2029-03-03',adultos:2,huesped:op.huespedPorId(destino),alojados:[op.huespedPorId(destino),op.huespedPorId(copia)]});
+ check(!!op.confirmarReserva(),'reserva para dos identidades');
+ check(op.conflictoFusion(copia,destino).includes('misma reserva'),'no colapsar huéspedes');
+ op.reiniciarDemostracion();
+ const emily=op.reservasDePersona('huesped-emily')[0],james=op.reservasDePersona('huesped-james')[0];
+ op.guardarRegistro(emily.id,{...registro,huespedId:'huesped-emily'},'en','');
+ op.guardarRegistro(james.id,{...registro,huespedId:'huesped-james',numeroDocumento:'DIFERENTE'},'en','');
+ check(op.conflictoFusion('huesped-emily','huesped-james').includes('documentos incompatibles'),'documentos incompatibles');
+ check(op.fusiones().length===0,'reinicio limpia historial');
+ return 'OK: migración de roles y documentos, separación de funciones, conflictos, rechazo, cambios posteriores y reinicio.';
+ }));
+ assert.deepEqual(errors,[]);console.log('OK: flujo de fusión supervisada y cinco tamaños de pantalla.');
+ } finally {await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});
+
