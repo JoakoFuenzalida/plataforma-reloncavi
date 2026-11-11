@@ -55,7 +55,8 @@ import { DemoState } from "../core/demo-state";
           disponible.
         </p>
       }
-      <h3>Folio de la estadía</h3>
+        @if(r.habitacionId && op.habitacionPorId(r.habitacionId)?.motivoBloqueo){<p class="mensaje mensaje-adv">Bloqueo de mantenimiento activo. La salida no libera esta habitación.</p>}
+    <h3>Folio de la estadía</h3>
       <dl aria-label="Resumen del folio">
         <dt>Alojamiento · {{ r.llegada }} → {{ r.salida }}</dt>
         <dd data-testid="alojamiento">

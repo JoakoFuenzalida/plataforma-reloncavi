@@ -6,10 +6,11 @@ import { HOTELES, hotelPorId } from "../core/hoteles";
 import { OperacionState } from "../core/operacion-state";
 import { Reserva } from "../core/operacion.modelos";
 import { Estadia } from "./estadia";
+import { Incidencia } from "./incidencia";
 
 @Component({
   selector: "app-operacion",
-  imports: [FormsModule, RouterLink, Estadia],
+  imports: [FormsModule, RouterLink, Estadia, Incidencia],
   styleUrl: "./operacion.scss",
   template: ` <a class="saltar-contenido" href="#operacion"
       >Saltar al contenido</a
@@ -29,6 +30,7 @@ import { Estadia } from "./estadia";
         ><a class="btn btn-secundario" routerLink="/personal/tablero"
           >Tablero</a
         >
+        <a class="btn btn-secundario" routerLink="/personal/mantenimiento">Mantenimiento</a>
       </nav>
       <main id="operacion" tabindex="-1" class="pila">
         <div class="fila-entre">
@@ -71,6 +73,7 @@ import { Estadia } from "./estadia";
             Muestra operativa del hotel. Las prioridades de recepción aparecen
             primero.
           </p>
+          @if(mensaje()){<p class="mensaje mensaje-exito" role="status">{{mensaje()}}</p>}
           <div class="rejilla-3">
             @for (h of habitaciones(); track h.id) {
               <article class="tarjeta pila">
@@ -87,6 +90,11 @@ import { Estadia } from "./estadia";
                   >
                 </div>
                 <p>{{ estadoHabitacion(h.estado) }}</p>
+                @if(h.motivoBloqueo){<p class="mensaje mensaje-adv">Bloqueo: {{h.motivoBloqueo}}</p>}
+                @if(op.ordenActiva(h.id);as orden){<a class="btn btn-secundario" routerLink="/personal/mantenimiento" [queryParams]="{orden:orden.id}">Ver orden {{orden.codigo}}</a>}
+                @else if(reporte()===h.id){<app-incidencia [habitacionId]="h.id" [operador]="operador()" (cancelar)="reporte.set('')" (guardada)="incidenciaGuardada()" />}
+                @else{<button class="btn btn-secundario" (click)="reporte.set(h.id)">Reportar incidencia</button>}
+
                 @if (h.motivoPrioridad) {
                   <p>{{ h.motivoPrioridad }}</p>
                 }
@@ -272,6 +280,7 @@ import { Estadia } from "./estadia";
                   Pagador: {{ op.huespedPorId(r.pagadorId)?.nombres }} ·
                   Huésped: {{ nombre(r) }}
                 </p>
+                @if(r.habitacionId && op.habitacionPorId(r.habitacionId)?.motivoBloqueo){<p class="mensaje mensaje-adv">Incidencia activa: {{op.habitacionPorId(r.habitacionId)?.motivoBloqueo}}. Coordina con mantenimiento.</p>}
                 @if (r.estado === "confirmada") {
                   <span class="distintivo">Objetivo de check-in: 90 s</span>
                   <a [routerLink]="['/registro', r.id]"
@@ -409,6 +418,8 @@ export class Operacion {
   readonly sincronizando = signal(false);
   readonly operador = signal("Marta Huenchullán");
   readonly inspeccion = signal("");
+  readonly reporte = signal("");
+  incidenciaGuardada(){this.reporte.set("");this.inspeccion.set("");this.mensaje.set("Incidencia registrada. La habitación tiene un bloqueo activo y una orden de mantenimiento.");}
   limpia = false;
   equipo = false;
   documento = "";
@@ -453,6 +464,7 @@ export class Operacion {
     this.seleccion.set("");
     this.mensaje.set("");
     this.inspeccion.set("");
+    this.reporte.set("");
   }
   seleccionar(r: Reserva) {
     this.seleccion.set(r.id);

@@ -92,3 +92,24 @@ export interface Cargo {
   creadoEn: string;
   sincronizacion: 'pendiente' | 'sincronizado';
 }
+
+export interface FotoIncidencia {
+  nombre: string;
+  dataUrl: string;
+}
+
+export type EstadoOrden = 'reportada' | 'en-curso' | 'por-aprobar' | 'cerrada';
+export interface OrdenMantenimiento {
+  id: string;
+  codigo: string;
+  hotelId: string;
+  habitacionId: string;
+  motivo: string;
+  foto: FotoIncidencia | null;
+  reportadoPor: string;
+  estado: EstadoOrden;
+  responsable: string | null;
+  trabajo: string;
+  aprobadoPor: string | null;
+  historial: { fecha: string; actor: string; detalle: string }[];
+}

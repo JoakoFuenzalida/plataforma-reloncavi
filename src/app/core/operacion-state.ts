@@ -9,6 +9,8 @@ import type {
   Huesped,
   Reserva,
   RegistroPrevio,
+  OrdenMantenimiento,
+  FotoIncidencia,
 } from "./operacion.modelos";
 
 import {
@@ -22,6 +24,7 @@ interface DatosOperacion {
   habitaciones: Habitacion[];
   reservas: Reserva[];
   cargos: Cargo[];
+  ordenes: OrdenMantenimiento[];
 }
 
 function crearDatosIniciales(): DatosOperacion {
@@ -75,6 +78,7 @@ function crearDatosIniciales(): DatosOperacion {
       },
     ],
     cargos: [],
+    ordenes: [],
   };
 }
 
@@ -88,6 +92,65 @@ export class OperacionState {
   readonly habitaciones = computed(() => this.datos().habitaciones);
   readonly reservas = computed(() => this.datos().reservas);
   readonly cargos = computed(() => this.datos().cargos);
+  readonly ordenes = computed(() => this.datos().ordenes);
+  readonly operadorMantenimiento = signal<'tecnico' | 'supervisor'>('tecnico');
+
+  ordenActiva(habitacionId: string) {
+    return this.ordenes().find(o => o.habitacionId === habitacionId && o.estado !== 'cerrada');
+  }
+
+  reportarIncidencia(habitacionId: string, motivo: string, foto: FotoIncidencia | null, actor: string): string {
+    const h = this.habitacionPorId(habitacionId);
+    if (!h || !this.operable(h.hotelId)) return 'No se puede reportar: revisa la habitación y el límite sin enlace.';
+    if (!motivo.trim() || motivo.trim().length > 500) return 'Describe la causa del bloqueo (máximo 500 caracteres).';
+    if (!['Marta Huenchullán', 'Supervisor de pisos'].includes(actor)) return 'Selecciona un operador de housekeeping válido.';
+    if (this.ordenActiva(h.id) || h.motivoBloqueo || h.estado === 'bloqueada') return 'Esta habitación ya tiene una incidencia activa. Consulta su orden de mantenimiento.';
+    if (foto && (!foto.nombre || foto.nombre.length > 255 || !/^data:image\/(png|jpeg|webp);base64,/.test(foto.dataUrl) || foto.dataUrl.length > 7100000)) return 'Adjunta una imagen PNG, JPG o WebP de hasta 5 MB.';
+    const orden: OrdenMantenimiento = {id:crypto.randomUUID(), codigo:`OT-${String(this.ordenes().length+1).padStart(4,'0')}`, hotelId:h.hotelId, habitacionId:h.id, motivo:motivo.trim(), foto:foto ? {...foto} : null, reportadoPor:actor, estado:'reportada', responsable:null, trabajo:'', aprobadoPor:null, historial:[{fecha:this.fechaOperativa,actor,detalle:'Incidencia reportada y bloqueo registrado.'}]};
+    this.datos.update(d=>({...d,ordenes:[...d.ordenes,orden],habitaciones:d.habitaciones.map(v=>v.id===h.id?{...v,estado:v.estado==='ocupada'?'ocupada':'bloqueada',motivoBloqueo:orden.motivo}:v)}));
+    this.registrarMantenimiento(orden,'Bloqueo por incidencia');
+    return '';
+  }
+
+  iniciarMantenimiento(id: string): string {
+    const o = this.ordenes().find(o=>o.id===id);
+    if (!o || o.estado!=='reportada' || this.operadorMantenimiento()!=='tecnico' || !this.operable(o.hotelId)) return 'Solo el técnico puede iniciar una orden reportada dentro del límite de operación.';
+    this.actualizarOrden({...o,estado:'en-curso',responsable:'Jorge Barría'},'Jorge Barría','Trabajo iniciado.');
+    return '';
+  }
+
+  solicitarAprobacion(id: string, trabajo: string, reparacion: boolean, seguridad: boolean): string {
+    const o = this.ordenes().find(o=>o.id===id);
+    if (!o || o.estado!=='en-curso' || this.operadorMantenimiento()!=='tecnico' || !this.operable(o.hotelId)) return 'Solo el técnico puede enviar una orden en curso a revisión.';
+    if (!trabajo.trim() || trabajo.trim().length>1000 || !reparacion || !seguridad) return 'Describe el trabajo y completa las verificaciones de reparación y seguridad.';
+    this.actualizarOrden({...o,estado:'por-aprobar',trabajo:trabajo.trim()},'Jorge Barría','Reparación y seguridad verificadas. Solicitud de aprobación.');
+    return '';
+  }
+
+  revisarMantenimiento(id: string, aprobar: boolean, funcion: boolean, seguridad: boolean, limpieza: boolean, observacion = ''): string {
+    const o = this.ordenes().find(o=>o.id===id);
+    if (!o || o.estado!=='por-aprobar' || this.operadorMantenimiento()!=='supervisor' || !this.operable(o.hotelId)) return 'La revisión requiere una orden por aprobar y el perfil de supervisor.';
+    if (!aprobar) {
+      if (!observacion.trim() || observacion.trim().length>500) return 'Indica por qué se devuelve el trabajo (máximo 500 caracteres).';
+      this.actualizarOrden({...o,estado:'en-curso'},'Supervisora de mantenimiento',`Devuelta: ${observacion.trim()}`);
+      return '';
+    }
+    if (!funcion || !seguridad || !limpieza) return 'Completa la lista de inspección antes de liberar la habitación.';
+    const h = this.habitacionPorId(o.habitacionId);
+    if (!h || h.estado==='ocupada' || this.reservas().some(r=>r.habitacionId===h.id && r.estado==='alojado')) return 'La habitación sigue ocupada. Coordina la salida con recepción antes de liberarla.';
+    this.actualizarOrden({...o,estado:'cerrada',aprobadoPor:'Supervisora de mantenimiento'},'Supervisora de mantenimiento','Funcionamiento, seguridad y limpieza inspeccionados. Liberación aprobada.',true);
+    for (const r of this.reservas().filter(r=>r.estado==='confirmada' && r.habitacionId===o.habitacionId && this.esperas().includes(r.id))) this.avisos.update(a=>[...a,`${r.codigo}: habitación ${h.numero} lista tras mantenimiento. Aviso al huésped simulado.`]);
+    return '';
+  }
+
+  private actualizarOrden(orden: OrdenMantenimiento, actor: string, detalle: string, liberar = false) {
+    this.datos.update(d=>({...d,ordenes:d.ordenes.map(o=>o.id===orden.id?{...orden,historial:[...o.historial,{fecha:this.fechaOperativa,actor,detalle}]}:o),habitaciones:liberar?d.habitaciones.map(h=>h.id===orden.habitacionId?{...h,estado:'disponible',motivoBloqueo:null,prioridadLimpieza:'normal',motivoPrioridad:null,responsableLimpiezaId:null}:h):d.habitaciones}));
+    this.registrarMantenimiento(orden,detalle);
+  }
+
+  private registrarMantenimiento(o: OrdenMantenimiento, detalle: string) {
+    if (this.sinEnlace(o.hotelId)) this.cola.update(q=>[...q,{id:crypto.randomUUID(),hotelId:o.hotelId,reservaId:null,descripcion:`${o.codigo}: ${detalle}`,riesgo:'No aplica: operación sin cobro',estado:'pendiente'}]);
+  }
 
   // Usa la misma fecha simulada que el resto del prototipo.
   readonly fechaOperativa = [
@@ -139,6 +202,7 @@ export class OperacionState {
     this.esperas.set([]);
     this.cobros.set({});
     this.pagosSalida.set([]);
+    this.operadorMantenimiento.set('tecnico');
   }
 
   readonly enlaces = signal<Record<string, number>>({});
@@ -146,7 +210,7 @@ export class OperacionState {
     {
       id: string;
       hotelId: string;
-      reservaId: string;
+      reservaId: string | null;
       descripcion: string;
       riesgo: string;
       estado: "pendiente" | "sincronizado";
@@ -221,6 +285,7 @@ export class OperacionState {
     return this.habitacionesPorHotel(r.hotelId).filter(
       (h) =>
         h.estado === "disponible" &&
+        !h.motivoBloqueo &&
         (hotel?.tipos.findIndex((t) => t.codigo === h.tipoCodigo) ?? -1) >=
           orden &&
         !this.reservas().some(
@@ -255,7 +320,7 @@ export class OperacionState {
   }
   limpiar(id: string, inspeccion = false) {
     const h = this.habitacionPorId(id);
-    if (!h) return false;
+    if (!h || h.motivoBloqueo || this.ordenActiva(id)) return false;
     const siguiente =
       h.estado === "pendiente-limpieza"
         ? "en-limpieza"
@@ -385,6 +450,7 @@ export class OperacionState {
     const fallo = (error: string) => ({error, noches: 0, adicional: 0});
     if (!r || r.estado !== 'alojado' || !r.habitacionId) return fallo('Solo puedes extender una reserva alojada con habitación asignada.');
     if (!this.operable(r.hotelId)) return fallo('Reconecta antes de extender la estadía.');
+    if (this.habitacionPorId(r.habitacionId)?.motivoBloqueo) return fallo('La habitación tiene una incidencia activa. Resuelve el bloqueo antes de extender.');
     const fecha = new Date(salida+'T00:00:00Z');
     if (!/^\d{4}-\d{2}-\d{2}$/.test(salida) || Number.isNaN(fecha.getTime()) || fecha.toISOString().slice(0,10) !== salida || salida <= r.salida || salida <= this.fechaOperativa) return fallo('Elige una fecha válida posterior a la salida actual y al día de operación.');
     const activas = this.reservas().filter(o => o.id !== id && o.hotelId === r.hotelId && o.estado !== 'cancelada' && o.estado !== 'finalizada');
@@ -392,7 +458,8 @@ export class OperacionState {
     // Revisa cada noche de la partición, no la suma de reservas de todo el intervalo.
     for (let dia = Date.parse(r.salida); dia < fecha.getTime(); dia += 86400000) {
       const noche = new Date(dia).toISOString().slice(0,10);
-      if (activas.filter(o => o.tipoHabitacionCodigo === r.tipoHabitacionCodigo && o.llegada <= noche && o.salida > noche).length >= 3) return fallo('No hay cupos de esta categoría para todas las noches adicionales.');
+      const bloqueadas = this.habitacionesPorHotel(r.hotelId).filter(h=>h.tipoCodigo===r.tipoHabitacionCodigo && (h.estado==='bloqueada' || !!h.motivoBloqueo)).length;
+      if (activas.filter(o => o.tipoHabitacionCodigo === r.tipoHabitacionCodigo && o.llegada <= noche && o.salida > noche).length >= Math.max(0,3-bloqueadas)) return fallo('No hay cupos de esta categoría para todas las noches adicionales.');
     }
     const noches = (fecha.getTime()-Date.parse(r.salida))/86400000;
     return {error:'', noches, adicional:noches*r.tarifaNocheClp};
@@ -421,9 +488,9 @@ export class OperacionState {
       if (!aprobado) return 'Pago rechazado. No se cobró el saldo ni se cerró la reserva. Puedes reintentar.';
       this.registrar(r,`Pago de salida ${r.codigo}: CLP ${f.saldo}`,'Riesgo de rechazo diferido: autorización central no consultada');
     }
-    this.datos.update(d => ({...d, reservas:d.reservas.map(v=>v.id===id?{...v,estado:'finalizada',salidaReal:this.fechaOperativa}:v),habitaciones:d.habitaciones.map(h=>h.id===r.habitacionId?{...h,estado:'pendiente-limpieza',prioridadLimpieza:'normal',motivoPrioridad:null,responsableLimpiezaId:null}:h)}));
+    this.datos.update(d => ({...d, reservas:d.reservas.map(v=>v.id===id?{...v,estado:'finalizada',salidaReal:this.fechaOperativa}:v),habitaciones:d.habitaciones.map(h=>h.id===r.habitacionId?{...h,estado:h.motivoBloqueo?'bloqueada':'pendiente-limpieza',prioridadLimpieza:'normal',motivoPrioridad:null,responsableLimpiezaId:null}:h)}));
     this.esperas.update(v => v.filter(reservaId => reservaId !== id));
-    this.registrar(r,`Check-out ${r.codigo}: habitación enviada a limpieza`);
+    this.registrar(r,`Check-out ${r.codigo}: ${this.habitacionPorId(r.habitacionId)?.motivoBloqueo ? 'habitación bloqueada por mantenimiento' : 'habitación enviada a limpieza'}`);
     return '';
   }
   cobrar(id: string) {
@@ -508,7 +575,8 @@ export class OperacionState {
         r.llegada < salida &&
         r.salida > llegada,
     ).length;
-    return Math.max(0, 3 - ocupadas);
+    const bloqueadas = this.habitacionesPorHotel(hotelId).filter(h => h.tipoCodigo === tipo && (h.estado === 'bloqueada' || !!h.motivoBloqueo)).length;
+    return Math.max(0, 3 - ocupadas - bloqueadas);
   }
 
   confirmarReserva(): Reserva | null {
