@@ -5,10 +5,12 @@ import { DemoState } from "../core/demo-state";
 import { HOTELES, hotelPorId } from "../core/hoteles";
 import { OperacionState } from "../core/operacion-state";
 import { Reserva } from "../core/operacion.modelos";
+import { Estadia } from "./estadia";
+import { Incidencia } from "./incidencia";
 
 @Component({
   selector: "app-operacion",
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, Estadia, Incidencia],
   styleUrl: "./operacion.scss",
   template: ` <a class="saltar-contenido" href="#operacion"
       >Saltar al contenido</a
@@ -28,6 +30,7 @@ import { Reserva } from "../core/operacion.modelos";
         ><a class="btn btn-secundario" routerLink="/personal/tablero"
           >Tablero</a
         >
+        <a class="btn btn-secundario" routerLink="/personal/mantenimiento">Mantenimiento</a>
       </nav>
       <main id="operacion" tabindex="-1" class="pila">
         <div class="fila-entre">
@@ -70,6 +73,7 @@ import { Reserva } from "../core/operacion.modelos";
             Muestra operativa del hotel. Las prioridades de recepción aparecen
             primero.
           </p>
+          @if(mensaje()){<p class="mensaje mensaje-exito" role="status">{{mensaje()}}</p>}
           <div class="rejilla-3">
             @for (h of habitaciones(); track h.id) {
               <article class="tarjeta pila">
@@ -86,6 +90,11 @@ import { Reserva } from "../core/operacion.modelos";
                   >
                 </div>
                 <p>{{ estadoHabitacion(h.estado) }}</p>
+                @if(h.motivoBloqueo){<p class="mensaje mensaje-adv">Bloqueo: {{h.motivoBloqueo}}</p>}
+                @if(op.ordenActiva(h.id);as orden){<a class="btn btn-secundario" routerLink="/personal/mantenimiento" [queryParams]="{orden:orden.id}">Ver orden {{orden.codigo}}</a>}
+                @else if(reporte()===h.id){<app-incidencia [habitacionId]="h.id" [operador]="operador()" (cancelar)="reporte.set('')" (guardada)="incidenciaGuardada()" />}
+                @else{<button class="btn btn-secundario" (click)="reporte.set(h.id)">Reportar incidencia</button>}
+
                 @if (h.motivoPrioridad) {
                   <p>{{ h.motivoPrioridad }}</p>
                 }
@@ -257,6 +266,10 @@ import { Reserva } from "../core/operacion.modelos";
               } @empty {
                 <p>No hay huéspedes alojados en la muestra.</p>
               }
+              <h2>Salidas realizadas</h2>
+              @for(r of finalizadas();track r.id){
+                <button class="tarjeta reserva" (click)="seleccionar(r)"><strong>{{nombre(r)}}</strong><span>{{r.codigo}} · Salida {{r.salidaReal}}</span></button>
+              } @empty { <p>No hay salidas realizadas.</p> }
             </section>
             <section class="tarjeta pila">
               @if (actual(); as r) {
@@ -267,6 +280,7 @@ import { Reserva } from "../core/operacion.modelos";
                   Pagador: {{ op.huespedPorId(r.pagadorId)?.nombres }} ·
                   Huésped: {{ nombre(r) }}
                 </p>
+                @if(r.habitacionId && op.habitacionPorId(r.habitacionId)?.motivoBloqueo){<p class="mensaje mensaje-adv">Incidencia activa: {{op.habitacionPorId(r.habitacionId)?.motivoBloqueo}}. Coordina con mantenimiento.</p>}
                 @if (r.estado === "confirmada") {
                   <span class="distintivo">Objetivo de check-in: 90 s</span>
                   <a [routerLink]="['/registro', r.id]"
@@ -364,47 +378,10 @@ import { Reserva } from "../core/operacion.modelos";
                     Confirmar check-in y entregar llave
                   </button>
                 } @else {
-                  <p class="mensaje mensaje-exito">
-                    Check-in completado · {{ llave() }} entregada en simulación.
-                  </p>
-                  <h3>Folio de cargos</h3>
-                  <ul>
-                    @for (c of op.cargosPorReserva(r.id); track c.id) {
-                      <li>
-                        {{ c.concepto }} · {{ demo.precio(c.montoClp) }} ·
-                        {{ c.sincronizacion }}
-                      </li>
-                    } @empty {
-                      <li>No hay cargos adicionales.</li>
-                    }
-                  </ul>
-                  <form class="pila" (ngSubmit)="cargo(r)">
-                    <label class="campo"
-                      >Concepto<input
-                        class="control"
-                        name="concepto"
-                        [(ngModel)]="concepto"
-                        required
-                        maxlength="100" /></label
-                    ><label class="campo"
-                      >Monto CLP<input
-                        class="control"
-                        name="monto"
-                        type="number"
-                        [(ngModel)]="monto"
-                        min="1"
-                        max="1000000"
-                        required /></label
-                    ><button class="btn btn-primario">Agregar cargo</button>
-                  </form>
-                  <p>
-                    Preautorización ficticia: CLP 200.000 para extras. Cobrado
-                    en simulación: {{ demo.precio(op.cobros()[r.id] ?? 0) }}. El
-                    alojamiento ya está pagado.
-                  </p>
-                  <button class="btn btn-secundario" (click)="cobrar(r)">
-                    Cobrar extras contra preautorización
-                  </button>
+                  @if(r.estado === 'alojado') {
+                    <p class="mensaje mensaje-exito">Check-in completado · {{ llave() }} entregada en simulación.</p>
+                  }
+                  @for(id of [r.id]; track id) { <app-estadia [reservaId]="id" /> }
                 }
               } @else {
                 <h2>Selecciona una reserva</h2>
@@ -441,14 +418,14 @@ export class Operacion {
   readonly sincronizando = signal(false);
   readonly operador = signal("Marta Huenchullán");
   readonly inspeccion = signal("");
+  readonly reporte = signal("");
+  incidenciaGuardada(){this.reporte.set("");this.inspeccion.set("");this.mensaje.set("Incidencia registrada. La habitación tiene un bloqueo activo y una orden de mantenimiento.");}
   limpia = false;
   equipo = false;
   documento = "";
   verificado = false;
   evidencia = false;
   habitacion = "";
-  concepto = "";
-  monto = 0;
   readonly habitaciones = computed(() =>
     this.op
       .habitacionesPorHotel(this.hotelId())
@@ -473,6 +450,7 @@ export class Operacion {
   readonly alojados = computed(() =>
     this.op.huespedesAlojados().filter((r) => r.hotelId === this.hotelId()),
   );
+  readonly finalizadas = computed(() => this.op.reservas().filter(r => r.hotelId === this.hotelId() && r.estado === "finalizada"));
   readonly actual = computed(() => this.op.reservaPorId(this.seleccion()));
   readonly cola = computed(() =>
     this.op.cola().filter((o) => o.hotelId === this.hotelId()),
@@ -486,6 +464,7 @@ export class Operacion {
     this.seleccion.set("");
     this.mensaje.set("");
     this.inspeccion.set("");
+    this.reporte.set("");
   }
   seleccionar(r: Reserva) {
     this.seleccion.set(r.id);
@@ -536,22 +515,6 @@ export class Operacion {
       this.op.limpiar(id, true);
       this.inspeccion.set("");
     }
-  }
-  cargo(r: Reserva) {
-    this.mensaje.set(
-      this.op.agregarCargo(r.id, this.concepto, this.monto)
-        ? "Cargo registrado."
-        : "Revisa concepto, monto y conexión.",
-    );
-    this.concepto = "";
-    this.monto = 0;
-  }
-  cobrar(r: Reserva) {
-    this.mensaje.set(
-      this.op.cobrar(r.id)
-        ? "Cobro simulado registrado. Sin enlace, la aceptación central queda por verificar."
-        : "No hay saldo pendiente, supera la preautorización o se alcanzó el límite sin enlace.",
-    );
   }
   async reconectar() {
     this.sincronizando.set(true);

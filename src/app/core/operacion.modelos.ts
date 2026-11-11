@@ -75,6 +75,9 @@ export interface Reserva {
   // Importes base en CLP; la interfaz aplica la conversión visual.
   tarifaNocheClp: number;
   totalAlojamientoClp: number;
+  // Conserva el abono original cuando una extensión cambia el total.
+  alojamientoPagadoClp?: number;
+  salidaReal?: FechaISO;
 
   pagoReserva: 'pendiente' | 'aprobado' | 'rechazado';
   registrosPrevios: RegistroPrevio[];
@@ -88,4 +91,25 @@ export interface Cargo {
   montoClp: number;
   creadoEn: string;
   sincronizacion: 'pendiente' | 'sincronizado';
+}
+
+export interface FotoIncidencia {
+  nombre: string;
+  dataUrl: string;
+}
+
+export type EstadoOrden = 'reportada' | 'en-curso' | 'por-aprobar' | 'cerrada';
+export interface OrdenMantenimiento {
+  id: string;
+  codigo: string;
+  hotelId: string;
+  habitacionId: string;
+  motivo: string;
+  foto: FotoIncidencia | null;
+  reportadoPor: string;
+  estado: EstadoOrden;
+  responsable: string | null;
+  trabajo: string;
+  aprobadoPor: string | null;
+  historial: { fecha: string; actor: string; detalle: string }[];
 }

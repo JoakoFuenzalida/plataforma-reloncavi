@@ -9,8 +9,10 @@ import { Pago } from './pages/publico/pago';
 import { Registro } from './pages/publico/registro';
 import { Operacion } from './pages/operacion';
 import { Tablero } from './pages/tablero';
+import { Mantenimiento } from './pages/mantenimiento';
 
 export const routes: Routes = [
+  { path: 'personal/mantenimiento', component: Mantenimiento, title: 'Mantenimiento · Hoteles Reloncaví' },
   { path: '', component: Portada, title: 'Prototipo · Plataforma Hoteles Reloncaví' },
   { path: 'personal/recepcion', component: Operacion, title: 'Recepción · Hoteles Reloncaví' },
   { path: 'personal/tablero', component: Tablero, title: 'Tablero · Hoteles Reloncaví' },

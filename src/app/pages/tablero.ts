@@ -58,6 +58,7 @@ import { DemoState } from "../core/demo-state";
         <a class="btn btn-secundario" routerLink="/personal/recepcion"
           >Recepción</a
         ><a class="btn btn-secundario" routerLink="/terreno">Housekeeping</a>
+        <a class="btn btn-secundario" routerLink="/personal/mantenimiento">Mantenimiento</a>
       </nav>
       <h1>Tablero gerencial</h1>
       <div class="tarjeta fila">
@@ -86,7 +87,7 @@ import { DemoState } from "../core/demo-state";
       </div>
       <p class="mensaje mensaje-info">
         Indicadores de la muestra operativa, no del inventario completo de 820
-        habitaciones. Los check-in y cambios de limpieza actualizan este
+        habitaciones. Los check-in, check-out y cambios de limpieza actualizan este
         tablero.
       </p>
       <section class="rejilla-3" aria-label="Indicadores">
@@ -114,6 +115,12 @@ import { DemoState } from "../core/demo-state";
             </p>
           </details>
         </article>
+      </section>
+      <section class="rejilla-3" aria-label="Estado operativo">
+        <article class="tarjeta"><h2>Bloqueos de mantenimiento</h2><p class="metrica" data-testid="bloqueos">{{bloqueadas()}}</p><p>Habitaciones con incidencia activa, incluidas las que aún están ocupadas.</p></article>
+        <article class="tarjeta"><h2>Salidas realizadas</h2><p class="metrica" data-testid="salidas">{{salidas()}}</p><p>Check-out registrados en la fecha operativa.</p></article>
+        <article class="tarjeta"><h2>Por limpiar o inspeccionar</h2><p class="metrica" data-testid="limpieza">{{porLimpiar()}}</p><p>No disponibles para nuevas asignaciones.</p></article>
+        <article class="tarjeta"><h2>Habitaciones listas</h2><p class="metrica">{{listas()}}</p><p>Limpias e inspeccionadas; asignación sujeta a reservas.</p></article>
       </section>
       @if (!inventario().length) {
         <p class="tarjeta">No hay hoteles para esta combinación de filtros.</p>
@@ -238,6 +245,10 @@ export class Tablero {
   readonly ocupadas = computed(
     () => this.inventario().filter((h) => h.estado === "ocupada").length,
   );
+  readonly bloqueadas = computed(() => this.inventario().filter(h=>h.estado==='bloqueada' || !!h.motivoBloqueo).length);
+  readonly salidas = computed(() => this.op.reservas().filter(r => r.estado === 'finalizada' && r.salidaReal === this.op.fechaOperativa && this.seleccionados().some(h=>h.id===r.hotelId)).length);
+  readonly porLimpiar = computed(() => this.inventario().filter(h=>['pendiente-limpieza','en-limpieza','pendiente-inspeccion'].includes(h.estado)).length);
+  readonly listas = computed(() => this.inventario().filter(h=>h.estado==='disponible').length);
   readonly ingresos = computed(() =>
     this.alojados().reduce((s, r) => s + r.tarifaNocheClp, 0),
   );
