@@ -69,14 +69,9 @@ import { hotelPorId } from "../../core/hoteles";
           {{ b.huesped.nombres }} {{ b.huesped.apellidos }} ·
           {{ b.huesped.correo }}
         </p>
-        <p>
-          {{
-            tr(
-              "Reservante, pagador y huésped titular: la misma persona en esta reserva directa.",
-              "Booker, payer and lead guest: the same person for this direct booking."
-            )
-          }}
-        </p>
+        <p>{{tr('Reservante','Booker')}}: {{b.huesped.nombres}} {{b.huesped.apellidos}}</p>
+        <p>{{tr('Pagador','Payer')}}: {{(b.pagador??b.huesped).nombres}} {{(b.pagador??b.huesped).apellidos}}</p>
+        <p>{{tr('Personas alojadas','Guests')}}:</p><ul>@for(h of b.alojados??[b.huesped];track $index){<li>{{h.nombres}} {{h.apellidos}}</li>}</ul>
         <h2>{{ demo.precio(total()) }}</h2>
         <p>
           {{
@@ -183,8 +178,8 @@ export class Pago {
       else
         this.error.set(
           this.tr(
-            "Ya no quedan cupos. Busca otra habitación.",
-            "No availability remains. Find another room.",
+            "Revisa la disponibilidad y las fichas de los participantes antes de reintentar.",
+            "Check availability and participant profiles before trying again.",
           ),
         );
     } else

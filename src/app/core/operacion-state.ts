@@ -11,6 +11,7 @@ import type {
   RegistroPrevio,
   OrdenMantenimiento,
   FotoIncidencia,
+  PersonaReserva,
 } from "./operacion.modelos";
 
 import {
@@ -173,6 +174,23 @@ export class OperacionState {
 
   huespedPorId(id: string): Huesped | undefined {
     return this.huespedes().find((huesped) => huesped.id === id);
+  }
+
+  reservasDePersona(id: string): Reserva[] {
+    return this.reservas().filter(r=>r.reservanteId===id || r.pagadorId===id || r.huespedesIds.includes(id));
+  }
+
+  personaValida(p: PersonaReserva): boolean {
+    return !!p.nombres.trim() && p.nombres.length<=80 && !!p.apellidos.trim() && p.apellidos.length<=80 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.correo) && p.correo.length<=150 && /^\+?[0-9 ()-]{7,25}$/.test(p.telefono) && p.nacionalidad.length<=80 && ['es','en'].includes(p.idioma) && p.preferencias.join(', ').length<=300;
+  }
+
+  guardarHuesped(persona: PersonaReserva): { error: string; id: string } {
+    if (!this.personaValida(persona)) return {error:'Revisa nombres, apellidos, correo y teléfono. Usa datos ficticios válidos.',id:''};
+    if (persona.id && !this.huespedPorId(persona.id)) return {error:'La ficha ya no existe. Vuelve a seleccionarla.',id:''};
+    const id=persona.id??crypto.randomUUID();
+    const h:Huesped={...persona,id,nombres:persona.nombres.trim(),apellidos:persona.apellidos.trim(),correo:persona.correo.trim(),telefono:persona.telefono.trim(),preferencias:[...persona.preferencias]};
+    this.datos.update(d=>({...d,huespedes:persona.id?d.huespedes.map(v=>v.id===id?h:v):[...d.huespedes,h]}));
+    return {error:'',id};
   }
 
   reservaPorId(id: string): Reserva | undefined {
@@ -514,6 +532,8 @@ export class OperacionState {
     idioma: "es" | "en",
     preferencias: string,
   ): void {
+    const reserva = this.reservaPorId(id);
+    if (!reserva || !reserva.huespedesIds.includes(registro.huespedId) || !['confirmada','alojado'].includes(reserva.estado)) return;
     if (
       !registro.numeroDocumento.trim() ||
       !registro.archivoDocumentoNombre ||
@@ -555,7 +575,9 @@ export class OperacionState {
     llegada: string;
     salida: string;
     adultos: number;
-    huesped: Omit<Huesped, "id">;
+    huesped: PersonaReserva;
+    pagador?: PersonaReserva;
+    alojados?: PersonaReserva[];
   } | null>(null);
 
   cupos(
@@ -587,8 +609,19 @@ export class OperacionState {
     if (!b || !tipo || !this.cupos(b.hotelId, b.tipo, b.llegada, b.salida))
       return null;
     const id = crypto.randomUUID();
-    // No se fusionan identidades automáticamente por coincidencia de correo.
-    const h: Huesped = { ...b.huesped, id: "h-" + id };
+    const participantes = [b.huesped, b.pagador??b.huesped, ...(b.alojados??[b.huesped])];
+    if ((b.alojados??[b.huesped]).length!==b.adultos || participantes.some(p=>p.id?!this.huespedPorId(p.id):!this.personaValida(p))) return null;
+    // La reutilización es explícita por ID. Un correo coincidente nunca fusiona fichas.
+    const nuevos: Huesped[]=[];
+    const referencias=new Map<PersonaReserva,string>();
+    const resolver=(p:PersonaReserva):string=>{
+      if(p.id) return p.id;
+      const previo=referencias.get(p);if(previo)return previo;
+      const personaId=crypto.randomUUID();referencias.set(p,personaId);
+      nuevos.push({...p,id:personaId,nombres:p.nombres.trim(),apellidos:p.apellidos.trim(),correo:p.correo.trim(),preferencias:[...p.preferencias]});return personaId;
+    };
+    const reservanteId=resolver(b.huesped),pagadorId=resolver(b.pagador??b.huesped),huespedesIds=(b.alojados??[b.huesped]).map(resolver);
+    if(new Set(huespedesIds).size!==huespedesIds.length)return null;
     const dias = (Date.parse(b.salida) - Date.parse(b.llegada)) / 86400000;
     if (
       !Number.isInteger(dias) ||
@@ -605,9 +638,9 @@ export class OperacionState {
       hotelId: b.hotelId,
       tipoHabitacionCodigo: b.tipo,
       habitacionId: null,
-      reservanteId: h.id,
-      pagadorId: h.id,
-      huespedesIds: [h.id],
+      reservanteId,
+      pagadorId,
+      huespedesIds,
       llegada: b.llegada,
       salida: b.salida,
       adultos: b.adultos,
@@ -620,7 +653,7 @@ export class OperacionState {
     };
     this.datos.update((d) => ({
       ...d,
-      huespedes: [...d.huespedes, h],
+      huespedes: [...d.huespedes, ...nuevos],
       reservas: [...d.reservas, r],
     }));
     this.borrador.set(null);

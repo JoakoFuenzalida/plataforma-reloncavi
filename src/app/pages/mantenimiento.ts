@@ -53,7 +53,7 @@ import { EstadoOrden, OrdenMantenimiento } from "../core/operacion.modelos";
         ><a class="btn btn-secundario" routerLink="/personal/tablero"
           >Tablero</a
         >
-      </nav>
+      <a class="btn btn-secundario" routerLink="/personal/huespedes">Directorio de huéspedes</a></nav>
       <div class="fila-entre">
         <div>
           <p class="texto-2">Operación del hotel</p>

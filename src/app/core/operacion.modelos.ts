@@ -28,6 +28,8 @@ export interface Huesped {
   preferencias: string[];
 }
 
+export type PersonaReserva = Omit<Huesped, 'id'> & { id?: string };
+
 export interface RegistroPrevio {
   huespedId: string;
   tipoDocumento: 'cedula' | 'pasaporte';

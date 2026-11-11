@@ -1,5 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { PersonaReserva } from '../../core/operacion.modelos';
+import { PersonaReservaEditor } from '../../shared/persona-reserva';
 import { OperacionState } from '../../core/operacion-state';
 import {
   FormBuilder,
@@ -17,7 +20,7 @@ import { HOY_ISO, noches } from './buscador';
 @Component({
   selector: 'app-datos-reserva',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, FormsModule, RouterLink, PersonaReservaEditor],
   styles: `
     :host {
       display: block;
@@ -103,6 +106,8 @@ import { HOY_ISO, noches } from './buscador';
             (ngSubmit)="guardar()"
             novalidate
           >
+            <label class="campo" for="reservante-existente">{{tr('Reservante de demostración','Demo booker')}}</label>
+            <select id="reservante-existente" class="control" [ngModel]="reservanteId" [ngModelOptions]="{standalone:true}" (ngModelChange)="elegirReservante($event)"><option value="">{{tr('Persona nueva','New person')}}</option>@for(h of operacion.huespedes();track h.id){<option [value]="h.id">{{h.nombres}} {{h.apellidos}} · {{h.correo}}</option>}</select>
             @for (campo of campos; track campo.id) {
               <div class="campo">
                 <label [for]="campo.id">
@@ -115,6 +120,7 @@ import { HOY_ISO, noches } from './buscador';
                   [type]="campo.tipo"
                   [autocomplete]="campo.autocompletar"
                   [formControlName]="campo.id"
+                  [readOnly]="!!reservanteId"
                   [attr.aria-invalid]="
                     tieneError(campo.id) ? 'true' : null
                   "
@@ -148,6 +154,11 @@ import { HOY_ISO, noches } from './buscador';
               }}
             </p>
 
+            <label class="casilla"><input type="checkbox" [checked]="soyPagador" (change)="soyPagador=$any($event.target).checked">{{tr('El reservante también paga','The booker also pays')}}</label>
+            @if(!soyPagador){<app-persona-reserva [titulo]="tr('Pagador','Payer')" prefijo="pagador" [inicial]="pagador" (cambio)="pagador=$event" />}
+            <label class="casilla"><input type="checkbox" [checked]="soyHuesped" (change)="cambiarAlojamiento($any($event.target).checked)">{{tr('El reservante también se aloja','The booker is also a guest')}}</label>
+            @for(slot of acompanantes;track slot.indice){<app-persona-reserva [titulo]="tr('Huésped ','Guest ')+(slot.indice+(soyHuesped?2:1))" [prefijo]="'alojado-'+slot.indice" [inicial]="slot.persona" (cambio)="actualizarAcompanante(slot.indice,$event)" />}
+            @if(errorParticipantes()){<p class="mensaje mensaje-error" role="alert">{{errorParticipantes()}}</p>}
             <div class="acciones">
               <a
                 class="btn btn-secundario"
@@ -229,7 +240,7 @@ export class DatosReserva {
   protected readonly estado = inject(DemoState);
   private readonly ruta = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
-  private readonly operacion = inject(OperacionState);
+  protected readonly operacion = inject(OperacionState);
   private readonly router = inject(Router);
 
   private readonly parametros = this.ruta.snapshot.queryParamMap;
@@ -333,8 +344,22 @@ export class DatosReserva {
   });
 
   protected readonly validado = signal(false);
+  protected reservanteId='';protected soyPagador=true;protected soyHuesped=true;protected pagador:PersonaReserva|null=null;
+  protected acompanantes:{indice:number;persona:PersonaReserva|null}[]=Array.from({length:Math.max(0,Math.min(4,this.adultos||1)-1)},(_,indice)=>({indice,persona:null}));
+  protected readonly errorParticipantes=signal('');
+  protected elegirReservante(id:string){this.reservanteId=id;const h=this.operacion.huespedPorId(id);if(h)this.form.patchValue(h);else this.form.reset();}
+  protected cambiarAlojamiento(valor:boolean){this.soyHuesped=valor;this.acompanantes=Array.from({length:Math.max(0,Math.min(4,this.adultos||1)-(valor?1:0))},(_,indice)=>this.acompanantes[indice]??{indice,persona:null});}
+  protected actualizarAcompanante(indice:number,persona:PersonaReserva|null){if(this.acompanantes[indice])this.acompanantes[indice].persona=persona;}
+
 
   constructor() {
+    const b=this.operacion.borrador();
+    if(b && b.hotelId===this.hotel?.id && b.tipo===this.tipo?.codigo && b.llegada===this.llegada && b.salida===this.salida && b.adultos===this.adultos){
+      this.reservanteId=b.huesped.id??'';this.form.patchValue(b.huesped);
+      this.soyPagador=!b.pagador || b.pagador===b.huesped || (!!b.huesped.id && b.pagador.id===b.huesped.id);this.pagador=b.pagador??null;
+      const alojados=b.alojados??[b.huesped];this.soyHuesped=alojados[0]===b.huesped || (!!b.huesped.id && alojados[0]?.id===b.huesped.id);
+      this.acompanantes=alojados.slice(this.soyHuesped?1:0).map((persona,indice)=>({indice,persona}));
+    }
     this.form.valueChanges.subscribe(() => {
       this.validado.set(false);
     });
@@ -353,7 +378,14 @@ export class DatosReserva {
     this.form.markAllAsTouched();
     this.validado.set(this.seleccionValida && this.form.valid);
     if (!this.validado() || !this.hotel || !this.tipo) return;
-    this.operacion.borrador.set({ hotelId: this.hotel.id, tipo: this.tipo.codigo, llegada: this.llegada, salida: this.salida, adultos: this.adultos, huesped: { ...this.form.getRawValue(), nacionalidad: '', idioma: this.estado.idioma(), preferencias: [] } });
+    const reservante:PersonaReserva=this.reservanteId ? this.operacion.huespedPorId(this.reservanteId)! : { ...this.form.getRawValue(), nacionalidad: '', idioma: this.estado.idioma(), preferencias: [] };
+    const extras=this.acompanantes.map(s=>s.persona);
+    if(extras.some(p=>!p) || (!this.soyPagador && !this.pagador)) {this.validado.set(false);this.errorParticipantes.set(this.tr('Completa los datos del pagador y de cada huésped.','Complete the payer and every guest’s details.'));return;}
+    const alojados=[...(this.soyHuesped?[reservante]:[]),...extras as PersonaReserva[]];
+    const ids=alojados.filter(p=>p.id).map(p=>p.id);
+    if(new Set(ids).size!==ids.length){this.validado.set(false);this.errorParticipantes.set(this.tr('Cada adulto debe tener una ficha distinta.','Each adult must have a different profile.'));return;}
+    this.errorParticipantes.set('');
+    this.operacion.borrador.set({hotelId:this.hotel.id,tipo:this.tipo.codigo,llegada:this.llegada,salida:this.salida,adultos:this.adultos,huesped:reservante,pagador:this.soyPagador?reservante:this.pagador!,alojados});
     this.router.navigateByUrl('/reservar/pago');
   }
 

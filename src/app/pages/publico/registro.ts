@@ -1,4 +1,4 @@
-import { Component, inject, signal } from "@angular/core";
+import { Component, computed, inject, signal } from "@angular/core";
 import { ActivatedRoute, RouterLink } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 import { DemoState } from "../../core/demo-state";
@@ -19,12 +19,16 @@ import { RegistroPrevio } from "../../core/operacion.modelos";
         <p>
           {{
             tr(
-              "Registro del huésped titular. Los acompañantes se verifican individualmente en recepción.",
-              "Lead guest registration. Additional guests are verified individually at reception."
+              "Completa una ficha por cada persona alojada.",
+              "Complete one registration for each guest."
             )
           }}
         </p>
-        @if (enviado()) {
+        <label class="campo" for="registro-huesped">{{tr('Huésped del registro','Registration guest')}}</label>
+        <select class="control" id="registro-huesped" [ngModel]="huespedId()" (ngModelChange)="cambiarHuesped($event)">@for(id of r.huespedesIds;track id){<option [value]="id">{{op.huespedPorId(id)?.nombres}} {{op.huespedPorId(id)?.apellidos}}</option>}</select>
+        <p>{{r.registrosPrevios.length}} / {{r.huespedesIds.length}} {{tr('fichas enviadas','registrations sent')}}</p>
+        @if(r.estado!=='confirmada' && r.estado!=='alojado'){<p>{{tr('Esta reserva está cerrada. El registro ya no admite cambios.','This booking is closed. Registration can no longer be changed.')}}</p>}
+        @else if (enviado()) {
           <div class="mensaje mensaje-exito" role="status">
             {{
               tr(
@@ -194,9 +198,8 @@ export class Registro {
   readonly demo = inject(DemoState);
   readonly ruta = inject(ActivatedRoute);
   readonly id = this.ruta.snapshot.paramMap.get("id") ?? "";
-  readonly enviado = signal(
-    !!this.op.reservaPorId(this.id)?.registrosPrevios.length,
-  );
+  readonly huespedId = signal(this.op.reservaPorId(this.id)?.huespedesIds.includes(this.ruta.snapshot.queryParamMap.get('huesped')??'') ? this.ruta.snapshot.queryParamMap.get('huesped')! : this.op.reservaPorId(this.id)?.huespedesIds[0]??'');
+  readonly enviado = computed(()=>!!this.reserva()?.registrosPrevios.some(p=>p.huespedId===this.huespedId()));
   readonly error = signal("");
   tipo: RegistroPrevio["tipoDocumento"] = "pasaporte";
   numero = "";
@@ -207,6 +210,8 @@ export class Registro {
   consentimiento = false;
   idioma: "es" | "en" = this.demo.idioma();
   preferencias = "";
+  constructor(){this.cambiarHuesped(this.huespedId());}
+  cambiarHuesped(id:string){if(!this.reserva()?.huespedesIds.includes(id))return;this.huespedId.set(id);this.numero='';this.documento='';this.evidencia='';this.exencion=false;this.firma=false;this.consentimiento=false;this.error.set('');const h=this.op.huespedPorId(id);this.idioma=h?.idioma??this.demo.idioma();this.preferencias=h?.preferencias.join(', ')??'';}
   reserva() {
     return this.op.reservaPorId(this.id);
   }
@@ -253,7 +258,7 @@ export class Registro {
     this.op.guardarRegistro(
       r.id,
       {
-        huespedId: r.huespedesIds[0],
+        huespedId: this.huespedId(),
         tipoDocumento: this.tipo,
         numeroDocumento: this.numero.trim(),
         archivoDocumentoNombre: this.documento,
@@ -266,6 +271,6 @@ export class Registro {
       this.idioma,
       this.preferencias,
     );
-    this.enviado.set(true);
+
   }
 }

@@ -59,7 +59,7 @@ import { DemoState } from "../core/demo-state";
           >Recepción</a
         ><a class="btn btn-secundario" routerLink="/terreno">Housekeeping</a>
         <a class="btn btn-secundario" routerLink="/personal/mantenimiento">Mantenimiento</a>
-      </nav>
+      <a class="btn btn-secundario" routerLink="/personal/huespedes">Directorio de huéspedes</a></nav>
       <h1>Tablero gerencial</h1>
       <div class="tarjeta fila">
         <label class="campo"

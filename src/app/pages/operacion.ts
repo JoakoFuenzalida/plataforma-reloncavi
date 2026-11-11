@@ -31,7 +31,7 @@ import { Incidencia } from "./incidencia";
           >Tablero</a
         >
         <a class="btn btn-secundario" routerLink="/personal/mantenimiento">Mantenimiento</a>
-      </nav>
+      <a class="btn btn-secundario" routerLink="/personal/huespedes">Directorio de huéspedes</a></nav>
       <main id="operacion" tabindex="-1" class="pila">
         <div class="fila-entre">
           <div>
@@ -280,6 +280,7 @@ import { Incidencia } from "./incidencia";
                   Pagador: {{ op.huespedPorId(r.pagadorId)?.nombres }} ·
                   Huésped: {{ nombre(r) }}
                 </p>
+                <p>Personas alojadas:</p><ul>@for(id of r.huespedesIds;track id){<li><a routerLink="/personal/huespedes" [queryParams]="{huesped:id}">{{op.huespedPorId(id)?.nombres}} {{op.huespedPorId(id)?.apellidos}}</a></li>}</ul>
                 @if(r.habitacionId && op.habitacionPorId(r.habitacionId)?.motivoBloqueo){<p class="mensaje mensaje-adv">Incidencia activa: {{op.habitacionPorId(r.habitacionId)?.motivoBloqueo}}. Coordina con mantenimiento.</p>}
                 @if (r.estado === "confirmada") {
                   <span class="distintivo">Objetivo de check-in: 90 s</span>
@@ -327,7 +328,7 @@ import { Incidencia } from "./incidencia";
                   }
                   @for (p of r.registrosPrevios; track p.huespedId) {
                     <p>
-                      Documento: {{ p.tipoDocumento }} {{ p.numeroDocumento }} ·
+                      {{op.huespedPorId(p.huespedId)?.nombres}} {{op.huespedPorId(p.huespedId)?.apellidos}} · Documento: {{ p.tipoDocumento }} {{ p.numeroDocumento }} ·
                       {{ p.archivoDocumentoNombre }}
                     </p>
                     @if (p.solicitaExencionIva) {
