@@ -30,7 +30,7 @@ import { hotelPorId } from "../core/hoteles";
           >Mantenimiento</a
         >
       </nav>
-      <div class="fila-entre">
+      <nav class="fila" aria-label="Directorio"><a class="btn btn-secundario" routerLink="/personal/huespedes" aria-current="page">Huéspedes</a><a class="btn btn-secundario" routerLink="/personal/agencias">Agencias y turoperadores</a><a class="btn btn-secundario" routerLink="/personal/empresas">Empresas con convenio</a></nav><div class="fila-entre">
         <div>
           <p class="texto-2">Personas de toda la cadena</p>
           <h1>Directorio de huéspedes</h1>

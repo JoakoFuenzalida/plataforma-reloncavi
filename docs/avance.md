@@ -1,6 +1,6 @@
 # Avance del prototipo VORA
 
-Actualizado: 10 de noviembre de 2026. Rama: `main`.
+Actualizado: 11 de noviembre de 2026. Rama: `main`.
 Fecha simulada: 18 de enero de 2029. Datos ficticios en memoria; se reinician al recargar.
 
 ## Implementado
@@ -19,10 +19,12 @@ Fecha simulada: 18 de enero de 2029. Datos ficticios en memoria; se reinician al
 - Tablero inicial: ocupación, ADR y RevPAR; tres tipos de gráfico, filtros por hotel/categoría y detalle. Distingue muestra operativa e histórico ficticio.
 - Cambios publicados en el repositorio GitHub en `main`. Esto no acredita una URL pública desplegada y verificada.
 
+- Directorio comercial: agencias, turoperadores y empresas con acuerdos por hotel/categoría y vigencia; creación/edición, cupos por noche, vinculación de reservas existentes, comparación de comisión o tarifa y actividad. Los acuerdos vinculados conservan sus condiciones; se crea otro para cambiarlas. La vinculación no recalcula pagos ni modifica el inventario.
+
 ## Pendiente de implementación
 
 - Autenticación simulada, recuperación, segundo factor y onboarding de temporada.
-- Directorio de agencias/turoperadores y empresas: contratos, cupos, comisiones y convenios; evaluaciones/NPS e incidencias en ficha.
+- Evaluaciones/NPS e incidencias en ficha de huéspedes; ampliar la evaluación comercial más allá de diferencias de tarifa o comisión.
 - Administración: usuarios, permisos por hotel, alta masiva, reglas con aprobación dual y auditoría/exportación.
 - Tablero completo: seis tipos de gráfico, filtros temporales, exportación y métricas adicionales.
 - Sostenibilidad y Folio Verde provisional/definitivo, metodología y expediente.
@@ -35,7 +37,7 @@ Fecha simulada: 18 de enero de 2029. Datos ficticios en memoria; se reinician al
 - Compilación de producción: `npm run build`.
 - Iniciar servidor: `npm start -- --host 127.0.0.1 --port 4202`.
 - Pruebas de navegador: `node --test tests/*.cjs` (Edge instalado y playwright-core incluido).
-- Pruebas disponibles: reserva, operación, estadía, mantenimiento, directorio, fusión y presentación.
+- Pruebas disponibles: reserva, operación, estadía, mantenimiento, directorio, fusión, terceros comerciales y presentación.
 - La prueba de fusión cubre aprobación, rechazo, separación de funciones, migración de referencias/documentos, cambios posteriores, conflictos y cinco tamaños de pantalla.
 - Falta auditoría completa de accesibilidad, recorrido manual por teclado, contraste y capturas finales. Las pruebas de tamaño no certifican WCAG.
 - Falta verificar despliegue público, URL definitiva y acceso desde otro dispositivo; cerrar documentación técnica de navegación y diseño del prototipo.
@@ -49,3 +51,7 @@ Fecha simulada: 18 de enero de 2029. Datos ficticios en memoria; se reinician al
 5. Comprobar la ficha conservada, su historial y el registro de la decisión.
 
 La fusión combina preferencias y mantiene el contacto, nacionalidad e idioma de la ficha elegida. No presupone que dos personas con el mismo correo sean la misma persona.
+
+## Probar acuerdos comerciales
+
+Recepción → Directorio de huéspedes → Agencias y turoperadores / Empresas con convenio. Seleccionar un acuerdo, consultar una noche y vincular una reserva elegible con su fundamento. En agencias, variar la comisión aplicada para mostrar una diferencia. En empresas se compara la tarifa de la reserva con la negociada. También es posible crear acuerdos y editar los que no tienen reservas vinculadas.

@@ -12,7 +12,11 @@ import { Tablero } from './pages/tablero';
 import { Mantenimiento } from './pages/mantenimiento';
 import { Directorio } from './pages/directorio';
 
+import { Terceros } from './pages/terceros';
+
 export const routes: Routes = [
+  { path: 'personal/agencias', component: Terceros, title: 'Agencias y turoperadores · Hoteles Reloncaví' },
+  { path: 'personal/empresas', component: Terceros, data: { empresas: true }, title: 'Empresas con convenio · Hoteles Reloncaví' },
   { path: 'personal/huespedes', component: Directorio, title: 'Directorio de huéspedes · Hoteles Reloncaví' },
   { path: 'personal/mantenimiento', component: Mantenimiento, title: 'Mantenimiento · Hoteles Reloncaví' },
   { path: '', component: Portada, title: 'Prototipo · Plataforma Hoteles Reloncaví' },
