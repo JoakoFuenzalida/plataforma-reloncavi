@@ -110,7 +110,7 @@
   transition: border-color var(--transicion), box-shadow var(--transicion);
 
   &:hover { border-color: var(--c-fiordo); }
-  &:focus { outline: none; border-color: var(--c-fiordo); box-shadow: 0 0 0 3px var(--c-fiordo-100); }
+  &:focus { outline: none; border-color: var(--c-fiordo); box-shadow: var(--foco); }
   &.invalido, &.ng-invalid.ng-touched { border-color: var(--c-error); }
   &.valido { border-color: var(--c-alerce); }
   &::placeholder { color: #7b878c; }
