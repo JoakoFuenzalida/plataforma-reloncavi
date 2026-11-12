@@ -10,8 +10,18 @@
   display: inline-flex;
   align-items: center;
   gap: var(--s-2);
+  min-height: var(--objetivo-min);
+  padding: 4px 10px 4px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--r-md);
+  color: #eef4f6;
   font-size: var(--t-sm);
+  text-decoration: none;
+  transition: background var(--transicion), border-color var(--transicion);
   img { background: #fff; border-radius: 8px; padding: 4px; height: 40px; width: auto; }
+  app-icon { transition: transform var(--transicion); }
+  &:hover { color: #fff; background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.6); }
+  &:hover app-icon { transform: translateX(3px); }
 }
 .intro {
   margin-top: var(--s-7);

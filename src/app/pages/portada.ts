@@ -21,10 +21,12 @@ const PUBLICADOS = new Set(['huesped', 'recepcion', 'housekeeping', 'mantenimien
     <header class="cabecera">
       <div class="contenedor fila-entre">
         <app-logo [tam]="44" [claro]="true" />
-        <span class="propuesta">
+        <a class="propuesta" href="https://vora-one.vercel.app/" target="_blank" rel="noopener">
           Propuesta de
           <img src="marca/vora.png" alt="VORA" width="54" height="40" />
-        </span>
+          <app-icon nombre="arrow-right" [tam]="16" />
+          <span class="sr-only">(abre el sitio de VORA en una pestaña nueva)</span>
+        </a>
       </div>
       <div class="contenedor intro">
         <p class="sobre">Licitación TFEP-01/2026 · Plataforma digital de misión crítica</p>
