@@ -114,3 +114,6 @@ main { flex: 1; outline: none; }
   .campo { flex: 1; }
   @media (min-width: $bp-tableta) { display: none; }
 }
+
+.cuenta-enlace { min-height: var(--objetivo-min); }
+.cuenta-texto { display: none; @media (min-width: $bp-tableta) { display: inline; } }

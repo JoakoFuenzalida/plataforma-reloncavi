@@ -1,4 +1,10 @@
 import { Routes } from '@angular/router';
+import { Personal } from './layouts/personal';
+import { Acceso } from './pages/acceso/acceso';
+import { Recuperar } from './pages/acceso/recuperar';
+import { RegistroCuenta } from './pages/publico/registro-cuenta';
+import { Cuenta } from './pages/publico/cuenta';
+import { PersonalInicio } from './pages/personal-inicio';
 import { Publico } from './layouts/publico';
 import { Portada } from './pages/portada';
 import { Disponibilidad } from './pages/publico/disponibilidad';
@@ -15,18 +21,29 @@ import { Directorio } from './pages/directorio';
 import { Terceros } from './pages/terceros';
 
 export const routes: Routes = [
-  { path: 'personal/agencias', component: Terceros, title: 'Agencias y turoperadores · Hoteles Reloncaví' },
-  { path: 'personal/empresas', component: Terceros, data: { empresas: true }, title: 'Empresas con convenio · Hoteles Reloncaví' },
-  { path: 'personal/huespedes', component: Directorio, title: 'Directorio de huéspedes · Hoteles Reloncaví' },
-  { path: 'personal/mantenimiento', component: Mantenimiento, title: 'Mantenimiento · Hoteles Reloncaví' },
-  { path: '', component: Portada, title: 'Prototipo · Plataforma Hoteles Reloncaví' },
-  { path: 'personal/recepcion', component: Operacion, title: 'Recepción · Hoteles Reloncaví' },
-  { path: 'personal/tablero', component: Tablero, title: 'Tablero · Hoteles Reloncaví' },
-  { path: 'terreno', component: Operacion, data: { terreno: true }, title: 'Housekeeping · Hoteles Reloncaví' },
+  { path: '', pathMatch: 'full', component: Portada, title: 'Prototipo · Plataforma Hoteles Reloncaví' },
+  { path: 'acceso', component: Acceso, title: 'Iniciar sesión · Hoteles Reloncaví' },
+  { path: 'acceso/recuperar', component: Recuperar, title: 'Recuperar acceso · Hoteles Reloncaví' },
+  {
+    path: '',
+    component: Personal,
+    children: [
+      { path: 'personal/inicio', component: PersonalInicio, title: 'Inicio del turno · Plataforma Reloncaví' },
+      { path: 'personal/agencias', component: Terceros, title: 'Agencias y turoperadores · Hoteles Reloncaví' },
+      { path: 'personal/empresas', component: Terceros, data: { empresas: true }, title: 'Empresas con convenio · Hoteles Reloncaví' },
+      { path: 'personal/huespedes', component: Directorio, title: 'Directorio de huéspedes · Hoteles Reloncaví' },
+      { path: 'personal/mantenimiento', component: Mantenimiento, title: 'Mantenimiento · Hoteles Reloncaví' },
+      { path: 'personal/recepcion', component: Operacion, title: 'Recepción · Hoteles Reloncaví' },
+      { path: 'personal/tablero', component: Tablero, title: 'Tablero · Hoteles Reloncaví' },
+      { path: 'terreno', component: Operacion, data: { terreno: true }, title: 'Housekeeping · Hoteles Reloncaví' },
+    ],
+  },
   {
     path: '',
     component: Publico,
     children: [
+      { path: 'cuenta', component: Cuenta, title: 'Mi cuenta · Hoteles Reloncaví' },
+      { path: 'cuenta/registro', component: RegistroCuenta, title: 'Crear cuenta · Hoteles Reloncaví' },
       { path: 'inicio', component: Inicio, title: 'Hoteles Reloncaví · Hoteles y lodges en Chile' },
       { path: 'reservar/disponibilidad', component: Disponibilidad, title: 'Disponibilidad · Hoteles Reloncaví' },
       { path: 'reservar/datos', component: DatosReserva, title: 'Tus datos · Hoteles Reloncaví',},

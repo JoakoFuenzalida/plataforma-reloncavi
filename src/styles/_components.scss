@@ -271,3 +271,25 @@ select.control {
 .rejilla-2 { display: grid; gap: var(--s-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
 .rejilla-3 { display: grid; gap: var(--s-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
 .separador { border: 0; border-top: 1px solid var(--c-borde); margin: var(--s-5) 0; }
+
+// ---------- Menú secundario contextual (pestañas de navegación) ----------
+.subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1);
+  border-bottom: 2px solid var(--c-borde);
+  margin-bottom: var(--s-2);
+}
+.subnav-item {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--objetivo-min);
+  padding: 0 var(--s-4);
+  margin-bottom: -2px;
+  border-bottom: 3px solid transparent;
+  color: var(--c-texto-2);
+  font-weight: 600;
+  text-decoration: none;
+  &:hover { color: var(--c-fiordo); background: var(--c-fiordo-50); }
+  &[aria-current='page'] { color: var(--c-fiordo); border-bottom-color: var(--c-fiordo); }
+}

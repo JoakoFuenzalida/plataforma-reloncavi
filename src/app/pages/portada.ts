@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { DemoState, PERFILES, PerfilInfo } from '../core/demo-state';
 import { Icon } from '../shared/icon';
 import { Logo } from '../shared/logo';
@@ -13,7 +13,7 @@ const PUBLICADOS = new Set(['huesped', 'recepcion', 'housekeeping', 'mantenimien
  */
 @Component({
   selector: 'app-portada',
-  imports: [Icon, Logo],
+  imports: [Icon, Logo, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './portada.scss',
   template: `
@@ -57,6 +57,16 @@ const PUBLICADOS = new Set(['huesped', 'recepcion', 'housekeeping', 'mantenimien
         }
       </ul>
 
+      <section class="accesos-demo" aria-labelledby="t-accesos">
+        <h2 id="t-accesos">Acceso e incorporación</h2>
+        <p class="texto-2">Los perfiles anteriores entran directo. Para recorrer el inicio de sesión, use estas entradas:</p>
+        <div class="fila">
+          <a class="btn btn-secundario" routerLink="/acceso" [queryParams]="{ modo: 'corporativo' }"><app-icon nombre="shield-check" [tam]="18" />Personal: correo y segundo factor</a>
+          <a class="btn btn-secundario" routerLink="/acceso" [queryParams]="{ modo: 'terreno' }"><app-icon nombre="id-card" [tam]="18" />Terreno: credencial y PIN</a>
+          <a class="btn btn-secundario" routerLink="/cuenta/registro"><app-icon nombre="user-round" [tam]="18" />Huésped: crear cuenta en 5 pasos</a>
+        </div>
+      </section>
+
       <section class="tarjeta tarjeta-plana notas" aria-labelledby="t-notas">
         <h2 id="t-notas" class="h-chica">Cómo recorrer el prototipo</h2>
         <ul>
@@ -79,7 +89,7 @@ export class Portada {
   protected readonly perfiles = PERFILES.filter((p) => PUBLICADOS.has(p.id));
 
   entrar(p: PerfilInfo) {
-    this.estado.perfil.set(p.id);
+    this.estado.elegirPerfil(p.id);
     this.router.navigateByUrl(p.ruta);
   }
 }
