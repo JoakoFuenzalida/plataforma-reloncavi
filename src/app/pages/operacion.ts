@@ -12,27 +12,11 @@ import { Incidencia } from "./incidencia";
   selector: "app-operacion",
   imports: [FormsModule, RouterLink, Estadia, Incidencia],
   styleUrl: "./operacion.scss",
-  template: ` <a class="saltar-contenido" href="#operacion"
-      >Saltar al contenido</a
-    >
-    <header class="cabecera">
-      <div class="contenedor fila-entre">
-        <strong>Hoteles Reloncaví</strong
-        ><span>Prototipo con datos ficticios · 18 ene 2029</span
-        ><a routerLink="/">Cambiar perfil</a>
-      </div>
-    </header>
-    <div class="contenedor pila cuerpo">
-      <nav class="fila" aria-label="Operación">
-        <a class="btn btn-secundario" routerLink="/personal/recepcion"
-          >Recepción</a
-        ><a class="btn btn-secundario" routerLink="/terreno">Housekeeping</a
-        ><a class="btn btn-secundario" routerLink="/personal/tablero"
-          >Tablero</a
-        >
-        <a class="btn btn-secundario" routerLink="/personal/mantenimiento">Mantenimiento</a>
-      <a class="btn btn-secundario" routerLink="/personal/huespedes">Directorio de huéspedes</a></nav>
-      <main id="operacion" tabindex="-1" class="pila">
+  template: ` 
+    
+    <div class="pila">
+      
+      <div id="operacion" tabindex="-1" class="pila">
         <div class="fila-entre">
           <div>
             <p class="texto-2">Operación del hotel</p>
@@ -399,11 +383,8 @@ import { Incidencia } from "./incidencia";
             </section>
           </div>
         }
-      </main>
-      <footer class="texto-sm texto-2">
-        Plataforma operada por VORA · La simulación no demuestra resiliencia
-        real.
-      </footer>
+      </div>
+      
     </div>`,
 })
 export class Operacion {

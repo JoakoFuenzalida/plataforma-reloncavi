@@ -148,6 +148,8 @@ const assert = require("node:assert/strict");
       .getByRole("heading", { name: "No hay órdenes para este filtro" })
       .waitFor();
     await page.getByLabel("Buscar orden o habitación").fill("");
+    // En pantallas angostas el menú principal se abre con el botón de menú.
+    if (await page.getByRole("button", { name: "Abrir menú principal" }).isVisible()) await page.getByRole("button", { name: "Abrir menú principal" }).click();
     await page.getByRole("link", { name: "Recepción", exact: true }).click();
     await page.getByRole("button", { name: /Emily Carter/ }).click();
     await page.locator('option[value="pm-202"]').waitFor({ state: "attached" });

@@ -1,9 +1,17 @@
 # Avance del prototipo VORA
 
-Actualizado: 11 de noviembre de 2026. Rama: `main`.
+Actualizado: 12 de noviembre de 2026. Rama: `feat/navegacion-accesos`.
 Fecha simulada: 18 de enero de 2029. Datos ficticios en memoria; se reinician al recargar.
 
 ## Implementado
+
+- Navegación común del personal: menú lateral filtrado por perfil (cajón en teléfono), rastro de navegación con pestañas del directorio, notificaciones, acceso visible a «Cambiar perfil» y pie VORA. Las pantallas del personal ya no repiten su propia cabecera.
+- Inicio del turno personalizado por perfil (`/personal/inicio`): tareas, llegadas, habitaciones, órdenes, enlace de hoteles, padrón y accesos rápidos; tarjetas que se reordenan, ocultan y restablecen, guardadas por perfil en el navegador.
+- Accesos simulados (`/acceso`): personal con correo corporativo y segundo factor (código 482 913, tres intentos); terreno con credencial y PIN en teclado grande (PIN 2468) y activación de primer día con creación de PIN; huésped con correo y código de un solo uso (731 905).
+- Recuperación de acceso (`/acceso/recuperar`) en tres pasos con requisitos de contraseña en tiempo real (código 205 117).
+- Registro de huésped en cinco pasos (`/cuenta/registro`, ES/EN): datos, documento con arrastrar y soltar, idioma y preferencias, consentimiento y verificación (código 560 284). La ficha queda en el padrón único.
+- Portal del huésped (`/cuenta`): reservas con sus roles, acceso al registro previo y datos personales.
+- Recorrido guiado de primer ingreso (diálogo modal con foco atrapado), también disponible desde el menú del perfil.
 
 - Portal público: nueve hoteles, español/inglés, cuatro monedas, búsqueda y disponibilidad simulada.
 - Reservas: validaciones, pago ficticio aprobado/rechazado, reintento y confirmación sin duplicados.
@@ -23,7 +31,6 @@ Fecha simulada: 18 de enero de 2029. Datos ficticios en memoria; se reinician al
 
 ## Pendiente de implementación
 
-- Autenticación simulada, recuperación, segundo factor y onboarding de temporada.
 - Evaluaciones/NPS e incidencias en ficha de huéspedes; ampliar la evaluación comercial más allá de diferencias de tarifa o comisión.
 - Administración: usuarios, permisos por hotel, alta masiva, reglas con aprobación dual y auditoría/exportación.
 - Analítica comercial: ventas por canal y vinculación de métricas con los eventos operativos cuando se implementen sus mediciones. El histórico actual es una serie ficticia explícita.

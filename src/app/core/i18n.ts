@@ -12,6 +12,7 @@ const TEXTOS: Record<string, { es: string; en: string }> = {
   'nav.sostenibilidad': { es: 'Sostenibilidad', en: 'Sustainability' },
   'nav.mi-reserva': { es: 'Mi reserva', en: 'My booking' },
   'nav.ingresar': { es: 'Ingresar', en: 'Sign in' },
+  'nav.mi-cuenta': { es: 'Mi cuenta', en: 'My account' },
   'nav.idioma': { es: 'Idioma', en: 'Language' },
   'nav.moneda': { es: 'Moneda', en: 'Currency' },
   'nav.menu': { es: 'Menú', en: 'Menu' },

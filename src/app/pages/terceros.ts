@@ -10,27 +10,19 @@ import { HOTELES, hotelPorId } from '../core/hoteles';
   styleUrl: './operacion.scss',
   styles:
     '.detalle{overflow-wrap:anywhere}.comparacion{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}',
-  template: `<a class="saltar-contenido" href="#contenido-terceros">Saltar al contenido</a>
-    <header class="cabecera">
-      <div class="contenedor fila-entre">
-        <strong>Hoteles Reloncaví</strong><span>Prototipo con datos ficticios · 18 ene 2029</span
-        ><a routerLink="/">Cambiar perfil</a>
-      </div>
-    </header>
-    <main id="contenido-terceros" tabindex="-1" class="contenedor pila cuerpo">
-      <nav class="fila" aria-label="Operación">
-        <a class="btn btn-secundario" routerLink="/personal/recepcion">Recepción</a
-        ><a class="btn btn-secundario" routerLink="/personal/tablero">Tablero</a>
-      </nav>
-      <nav class="fila" aria-label="Directorio">
-        <a class="btn btn-secundario" routerLink="/personal/huespedes">Huéspedes</a
+  template: `
+    
+    <div id="contenido-terceros" tabindex="-1" class="pila">
+      
+      <nav class="subnav" aria-label="Directorio">
+        <a class="subnav-item" routerLink="/personal/huespedes">Huéspedes</a
         ><a
-          class="btn btn-secundario"
+          class="subnav-item"
           routerLink="/personal/agencias"
           [attr.aria-current]="!empresas ? 'page' : null"
           >Agencias y turoperadores</a
         ><a
-          class="btn btn-secundario"
+          class="subnav-item"
           routerLink="/personal/empresas"
           [attr.aria-current]="empresas ? 'page' : null"
           >Empresas con convenio</a
@@ -320,10 +312,8 @@ import { HOTELES, hotelPorId } from '../core/hoteles';
           }
         </section>
       </div>
-      <footer class="texto-sm texto-2">
-        Plataforma operada por VORA · Acuerdos ficticios en memoria.
-      </footer>
-    </main>`,
+      
+    </div>`,
 })
 export class Terceros {
   readonly comercial = inject(TercerosState);

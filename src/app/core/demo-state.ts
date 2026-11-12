@@ -118,12 +118,24 @@ export class DemoState {
 
   readonly perfilInfo = computed(() => PERFILES.find((p) => p.id === this.perfil()) ?? null);
 
+  /** Muestra el recorrido guiado de primer ingreso al entrar a la vista del personal. */
+  readonly recorridoPendiente = signal(false);
+  /** Correo del huésped con sesión simulada en el portal autenticado. */
+  readonly sesionHuesped = signal<string | null>(null);
+
+  elegirPerfil(p: Perfil | null) {
+    this.perfil.set(p);
+    try { p ? sessionStorage.setItem('rel-perfil', p) : sessionStorage.removeItem('rel-perfil'); } catch { /* sin almacenamiento */ }
+  }
+
   constructor() {
     try {
       const i = localStorage.getItem('rel-idioma') as Idioma | null;
       if (i === 'es' || i === 'en') this.idioma.set(i);
       const m = localStorage.getItem('rel-moneda') as Moneda | null;
       if (m && m in CAMBIO) this.moneda.set(m);
+      const p = sessionStorage.getItem('rel-perfil') as Perfil | null;
+      if (p && PERFILES.some((x) => x.id === p)) this.perfil.set(p);
     } catch {
       /* almacenamiento no disponible: se usan los valores por omisión */
     }

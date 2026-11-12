@@ -35,25 +35,10 @@ import { EstadoOrden, OrdenMantenimiento } from "../core/operacion.modelos";
       overflow-wrap: anywhere;
     }
   `,
-  template: `<a class="saltar-contenido" href="#mantenimiento"
-      >Saltar al contenido</a
-    >
-    <header class="cabecera">
-      <div class="contenedor fila-entre">
-        <strong>Hoteles Reloncaví</strong
-        ><span>Prototipo con datos ficticios · 18 ene 2029</span
-        ><a routerLink="/">Cambiar perfil</a>
-      </div>
-    </header>
-    <main id="mantenimiento" tabindex="-1" class="contenedor pila cuerpo">
-      <nav class="fila" aria-label="Operación">
-        <a class="btn btn-secundario" routerLink="/personal/recepcion"
-          >Recepción</a
-        ><a class="btn btn-secundario" routerLink="/terreno">Housekeeping</a
-        ><a class="btn btn-secundario" routerLink="/personal/tablero"
-          >Tablero</a
-        >
-      <a class="btn btn-secundario" routerLink="/personal/huespedes">Directorio de huéspedes</a></nav>
+  template: `
+    
+    <div id="mantenimiento" tabindex="-1" class="pila">
+      
       <div class="fila-entre">
         <div>
           <p class="texto-2">Operación del hotel</p>
@@ -343,10 +328,8 @@ import { EstadoOrden, OrdenMantenimiento } from "../core/operacion.modelos";
           }
         </section>
       </div>
-      <footer class="texto-sm texto-2">
-        Plataforma operada por VORA · Datos en memoria para demostración.
-      </footer>
-    </main>`,
+      
+    </div>`,
 })
 export class Mantenimiento {
   readonly op = inject(OperacionState);

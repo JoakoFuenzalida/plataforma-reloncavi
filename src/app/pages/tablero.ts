@@ -1,6 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { HOTELES } from '../core/hoteles';
 import { OperacionState } from '../core/operacion-state';
 import { Analitica } from './analitica';
@@ -8,7 +7,7 @@ import { DemoState } from '../core/demo-state';
 
 @Component({
   selector: 'app-tablero',
-  imports: [FormsModule, RouterLink, Analitica],
+  imports: [FormsModule, Analitica],
   styleUrl: './operacion.scss',
   styles: `
     .metrica {
@@ -47,19 +46,9 @@ import { DemoState } from '../core/demo-state';
       max-width: 100%;
     }
   `,
-  template: `<header class="cabecera">
-      <div class="contenedor fila-entre">
-        <strong>Hoteles Reloncaví</strong><span>Prototipo con datos ficticios · 18 ene 2029</span
-        ><a routerLink="/">Cambiar perfil</a>
-      </div>
-    </header>
-    <main class="contenedor pila cuerpo">
-      <nav class="fila" aria-label="Operación">
-        <a class="btn btn-secundario" routerLink="/personal/recepcion">Recepción</a
-        ><a class="btn btn-secundario" routerLink="/terreno">Housekeeping</a>
-        <a class="btn btn-secundario" routerLink="/personal/mantenimiento">Mantenimiento</a>
-        <a class="btn btn-secundario" routerLink="/personal/huespedes">Directorio de huéspedes</a>
-      </nav>
+  template: `
+    <div class="pila">
+      
       <h1>Tablero gerencial</h1>
       <div class="tarjeta fila">
         <label class="campo"
@@ -197,8 +186,8 @@ import { DemoState } from '../core/demo-state';
         </div>
       </section>
       <app-analitica [hotelesIds]="idsSeleccionados()" />
-      <footer class="texto-sm texto-2">Plataforma operada por VORA</footer>
-    </main>`,
+      
+    </div>`,
 })
 export class Tablero {
   readonly op = inject(OperacionState);

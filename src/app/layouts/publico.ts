@@ -45,6 +45,9 @@ import { Logo } from '../shared/logo';
               <option value="BRL">BRL R$</option>
             </select>
           </div>
+          <a class="btn btn-secundario btn-sm cuenta-enlace" [routerLink]="estado.sesionHuesped() ? '/cuenta' : '/acceso'" [queryParams]="estado.sesionHuesped() ? null : { modo: 'huesped' }">
+            <app-icon nombre="user-round" [tam]="18" /><span class="cuenta-texto">{{ estado.sesionHuesped() ? ('nav.mi-cuenta' | t) : ('nav.ingresar' | t) }}</span>
+          </a>
           <button type="button" class="btn btn-icono menu-movil" [attr.aria-expanded]="menuAbierto()" aria-controls="menu-movil"
             (click)="menuAbierto.set(!menuAbierto())" [attr.aria-label]="'nav.menu' | t">
             <app-icon [nombre]="menuAbierto() ? 'x' : 'menu'" />

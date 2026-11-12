@@ -11,26 +11,11 @@ import { hotelPorId } from "../core/hoteles";
   styleUrl: "./operacion.scss",
   styles:
     ".detalle{overflow-wrap:anywhere}.historial{padding-left:20px}.historial li{margin-block:16px}",
-  template: `<a class="saltar-contenido" href="#directorio"
-      >Saltar al contenido</a
-    >
-    <header class="cabecera">
-      <div class="contenedor fila-entre">
-        <strong>Hoteles Reloncaví</strong
-        ><span>Prototipo con datos ficticios · 18 ene 2029</span
-        ><a routerLink="/">Cambiar perfil</a>
-      </div>
-    </header>
-    <main id="directorio" tabindex="-1" class="contenedor pila cuerpo">
-      <nav class="fila" aria-label="Operación">
-        <a class="btn btn-secundario" routerLink="/personal/recepcion"
-          >Recepción</a
-        ><a class="btn btn-secundario" routerLink="/personal/tablero">Tablero</a
-        ><a class="btn btn-secundario" routerLink="/personal/mantenimiento"
-          >Mantenimiento</a
-        >
-      </nav>
-      <nav class="fila" aria-label="Directorio"><a class="btn btn-secundario" routerLink="/personal/huespedes" aria-current="page">Huéspedes</a><a class="btn btn-secundario" routerLink="/personal/agencias">Agencias y turoperadores</a><a class="btn btn-secundario" routerLink="/personal/empresas">Empresas con convenio</a></nav><div class="fila-entre">
+  template: `
+    
+    <div id="directorio" tabindex="-1" class="pila">
+      
+      <nav class="subnav" aria-label="Directorio"><a class="subnav-item" routerLink="/personal/huespedes" aria-current="page">Huéspedes</a><a class="subnav-item" routerLink="/personal/agencias">Agencias y turoperadores</a><a class="subnav-item" routerLink="/personal/empresas">Empresas con convenio</a></nav><div class="fila-entre">
         <div>
           <p class="texto-2">Personas de toda la cadena</p>
           <h1>Directorio de huéspedes</h1>
@@ -235,10 +220,8 @@ import { hotelPorId } from "../core/hoteles";
         } @empty { <p>No hay solicitudes de fusión.</p> }
         @if (mensajeFusion()) { <p class="mensaje" [class.mensaje-error]="errorFusion()" [class.mensaje-exito]="!errorFusion()" [attr.role]="errorFusion() ? 'alert' : 'status'">{{ mensajeFusion() }}</p> }
       </section>
-      <footer class="texto-sm texto-2">
-        Plataforma operada por VORA · Fichas ficticias compartidas en memoria.
-      </footer>
-    </main>`,
+      
+    </div>`,
 })
 export class Directorio {
   readonly op = inject(OperacionState);
