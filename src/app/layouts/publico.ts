@@ -15,7 +15,7 @@ import { Logo } from '../shared/logo';
     <a class="saltar-contenido" href="#contenido">{{ estado.idioma() === 'es' ? 'Saltar al contenido' : 'Skip to content' }}</a>
     <header class="cabecera">
       <div class="contenedor barra">
-        <a routerLink="/inicio" class="enlace-logo" aria-label="Hoteles Reloncaví, inicio">
+        <a routerLink="/inicio" class="enlace-logo" aria-label="Reloncaví Hoteles · Lodges, ir al inicio">
           <app-logo [tam]="40" />
         </a>
 

@@ -28,7 +28,7 @@ import { RecorridoGuiado } from '../shared/recorrido-guiado';
         [attr.aria-expanded]="menuMovil()" aria-controls="menu-personal" aria-label="Abrir menú principal">
         <app-icon [nombre]="menuMovil() ? 'x' : 'menu'" />
       </button>
-      <a class="marca" routerLink="/personal/inicio" aria-label="Plataforma Reloncaví, inicio del turno">
+      <a class="marca" routerLink="/personal/inicio" aria-label="Reloncaví Plataforma de operación, ir al inicio del turno">
         <app-isotipo [tam]="34" [invertido]="true" />
         <span class="marca-texto"><strong>Reloncaví</strong><span>Plataforma de operación</span></span>
       </a>
